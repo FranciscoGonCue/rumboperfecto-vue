@@ -1,7 +1,11 @@
 <template>
-  <div class="min-h-full flex items-center justify-center p-6">
+  <div class="relative min-h-screen w-full flex items-center justify-center p-6 overflow-hidden transition-colors duration-300"
+       :class="store.isDark ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black' : 'bg-gradient-to-br from-gray-50 via-white to-orange-50'">
+    <!-- Animated Background -->
+    <ParticleBackground :is-dark="store.isDark" />
+    
     <!-- Not Authenticated -->
-    <div v-if="!store.isAuthenticated" class="bg-white p-12 rounded-[50px] shadow-2xl text-center max-w-md w-full border border-orange-50">
+    <div v-if="!store.isAuthenticated" class="relative z-10 bg-white/95 backdrop-blur-sm p-12 rounded-[50px] shadow-2xl text-center max-w-md w-full border border-orange-50">
       <div class="w-32 h-32 rounded-full bg-orange-50 mx-auto mb-6 p-1 border-4 border-rumbo-orange shadow-xl flex items-center justify-center">
         <User :size="64" class="text-rumbo-orange" />
       </div>
@@ -107,7 +111,7 @@
     </div>
 
     <!-- Authenticated -->
-    <div v-else class="bg-white p-12 rounded-[50px] shadow-2xl text-center max-w-md w-full border border-orange-50">
+    <div v-else class="relative z-10 bg-white/95 backdrop-blur-sm p-12 rounded-[50px] shadow-2xl text-center max-w-md w-full border border-orange-50">
       <div class="w-32 h-32 rounded-full bg-orange-50 mx-auto mb-6 p-1 border-4 border-rumbo-orange shadow-xl overflow-hidden">
         <img :src="store.user.avatar" class="w-full h-full object-cover" alt="profile" />
       </div>
@@ -147,6 +151,7 @@ import { ref, reactive, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useAuth } from '@/composables/useAuth'
 import { User } from 'lucide-vue-next'
+import ParticleBackground from '@/components/ParticleBackground.vue'
 
 const store = useAppStore()
 const auth = useAuth()

@@ -5,6 +5,7 @@ import type { Trip, User, Activity } from '@/types'
 export const useAppStore = defineStore('app', () => {
   // State
   const currentView = ref<'inicio' | 'plan' | 'perfil'>('inicio')
+  const theme = ref<'light' | 'dark'>('light')
   const trips = ref<Trip[]>([])
   const user = ref<User>({
     id: '1',
@@ -17,10 +18,23 @@ export const useAppStore = defineStore('app', () => {
   // Computed
   const tripCount = computed(() => trips.value.length)
   const isAuthenticated = computed(() => user.value.isAuthenticated)
+  const isDark = computed(() => theme.value === 'dark')
 
   // Actions
   function setCurrentView(view: 'inicio' | 'plan' | 'perfil') {
     currentView.value = view
+  }
+
+  function toggleTheme() {
+    theme.value = theme.value === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('rumbo_theme', theme.value)
+  }
+
+  function loadThemeFromStorage() {
+    const saved = localStorage.getItem('rumbo_theme') as 'light' | 'dark' | null
+    if (saved) {
+      theme.value = saved
+    }
   }
 
   function loadTripsFromStorage() {
@@ -85,13 +99,17 @@ export const useAppStore = defineStore('app', () => {
   return {
     // State
     currentView,
+    theme,
     trips,
     user,
     // Computed
     tripCount,
     isAuthenticated,
+    isDark,
     // Actions
     setCurrentView,
+    toggleTheme,
+    loadThemeFromStorage,
     loadTripsFromStorage,
     saveTripsToStorage,
     addTrip,

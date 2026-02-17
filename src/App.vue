@@ -45,6 +45,9 @@
         </nav>
 
         <div class="flex items-center space-x-4">
+          <!-- Theme Toggle Button -->
+          <ThemeToggle />
+          
           <button class="lg:hidden p-2 text-rumbo-orange bg-orange-50 rounded-full">
             <Plus :size="20" />
           </button>
@@ -98,6 +101,7 @@ import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import DesktopNavLink from '@/components/DesktopNavLink.vue'
 import NavButton from '@/components/NavButton.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const store = useAppStore()
 const showSplash = ref(true)
@@ -120,6 +124,7 @@ const transitionName = computed(() => {
 onMounted(() => {
   store.loadTripsFromStorage()
   store.loadUserFromStorage()
+  store.loadThemeFromStorage()
 })
 </script>
 
