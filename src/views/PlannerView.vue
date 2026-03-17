@@ -1,4 +1,4 @@
-<template>
+<template><!-- Contenedor principal con padding adaptativo (6 en móvil, 12 en desktop) y altura mínima completa -->
   <!-- Contenedor principal con padding adaptativo (6 en móvil, 12 en desktop) y altura mínima completa -->
   <div class="p-6 lg:p-12 min-h-full">
     <!-- Contenedor centrado con máximo ancho para mantener legibilidad -->
