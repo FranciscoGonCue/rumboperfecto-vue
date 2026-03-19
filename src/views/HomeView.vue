@@ -1,12 +1,12 @@
 <template>
-  <div class="relative lg:flex overflow-hidden" :class="mapExpanded ? 'h-screen' : 'lg:h-[calc(100vh-80px)]'">
+  <div class="relative lg:flex w-full overflow-x-visible" :class="mapExpanded ? 'h-screen' : 'lg:h-[calc(100vh-80px)]'">
     <!-- MAP PANEL (expands when active) -->
     <div 
       class="relative transition-all duration-700 ease-in-out overflow-hidden shadow-2xl z-10"
       :class="[
         mapExpanded 
           ? 'h-screen w-full lg:w-[75%]' 
-          : 'h-[25vh] lg:h-full lg:w-[40%]'
+          : 'h-[25vh] lg:h-full lg:w-[20%]'
       ]"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
@@ -55,7 +55,7 @@
         <button
           v-if="mapExpanded"
           @click="exitMapMode"
-          class="absolute top-6 z-[1000] flex items-center space-x-2 bg-white/95 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl hover:bg-white transition-all group"
+          class="absolute top-4 z-[1000] flex items-center space-x-2 bg-white/95 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl hover:bg-white transition-all group"
           :class="isMobile ? 'left-6' : 'left-6'"
         >
           <X :size="20" class="text-gray-700" />
@@ -66,7 +66,7 @@
       <!-- Mobile Menu Toggle (show when expanded on mobile/tablet) -->
       <Transition name="fade">
         <button
-          v-if="mapExpanded && isMobile"
+          v-if="false"
           @click="toggleMobileSidebar"
           class="absolute top-6 right-6 z-[1000] bg-orange-500 text-white p-4 rounded-2xl shadow-2xl hover:bg-orange-600 transition-all"
         >
@@ -76,13 +76,12 @@
       </Transition>
     </div>
 
-    <!-- RIGHT PANEL: FEED & CONTENT (or SIDEBAR when map expanded) -->
-    <Transition name="slide-panel" mode="out-in">
+    <!-- RIGHT PANEL: FEED & CONTENT (or SIDEBAR when map expanded) — sin Transition mode out-in (evita panel invisible) -->
       <!-- FEED VIEW (default) -->
       <div 
         v-if="!mapExpanded"
         key="feed"
-        class="lg:w-[60%] lg:h-full overflow-y-auto bg-white lg:rounded-l-[60px] shadow-[-20px_0_40px_rgba(0,0,0,0.05)] relative z-20"
+        class="w-full lg:w-[80%] lg:h-full overflow-y-auto bg-white lg:rounded-l-[60px] shadow-[-20px_0_40px_rgba(0,0,0,0.05)] relative z-20"
       >
         <div class="pb-32 lg:pb-12 pt-6 lg:pt-12 px-6 lg:px-12">
           <!-- Search Bar -->
@@ -201,7 +200,7 @@
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Vista del Mapa</h3>
             
             <button
-              v-for="view in mapViews"
+              v-for="view in mapViews.filter(v => v.id === 'world')"
               :key="view.id"
               @click="changeMapView(view.id)"
               class="w-full flex items-center space-x-4 p-4 rounded-2xl transition-all border-2"
@@ -287,7 +286,6 @@
           </button>
         </div>
       </div>
-    </Transition>
 
     <!-- MOBILE/TABLET SIDEBAR (slides from right) -->
     <Transition name="slide-right">
@@ -317,7 +315,7 @@
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Vista del Mapa</h3>
             
             <button
-              v-for="view in mapViews"
+              v-for="view in mapViews.filter(v => v.id === 'world')"
               :key="view.id"
               @click="changeMapView(view.id); showMobileSidebar = false"
               class="w-full flex items-center space-x-3 p-3 rounded-xl transition-all border-2"
@@ -417,7 +415,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -450,8 +448,16 @@ const mapExpanded = ref(false)
 const currentMapView = ref('world')
 const showMobileSidebar = ref(false)
 const isMobile = ref(false)
+
+watch(mapExpanded, (expanded) => {
+  document.documentElement.classList.toggle('map-expanded', expanded)
+})
 let map: L.Map | null = null
 const markers: L.Marker[] = []
+
+// Vista por defecto al entrar: acercar Europa.
+const europeCenter: [number, number] = [50, 10]
+const europeZoom = 4
 
 // Touch gesture handling
 let touchStartY = 0
@@ -544,36 +550,24 @@ function exitMapMode() {
   mapExpanded.value = false
   showMobileSidebar.value = false
   
-  // Reset view to world with animation
+  // Reset view to Europe with animation
   if (map) {
     setTimeout(() => {
-      map?.setView([20, 0], 2, { animate: true, duration: 1 })
+      map?.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
       map?.invalidateSize()
     }, 750)
   }
 }
 
 function changeMapView(viewId: string) {
-  currentMapView.value = viewId
+  // Solo se permite la vista mundial.
+  // Aunque se llame con otro id (por ejemplo por un click viejo o por código),
+  // forzamos siempre la vista 'world'.
+  currentMapView.value = 'world'
   
   if (!map) return
 
-  switch (viewId) {
-    case 'world':
-      map.setView([20, 0], 2, { animate: true, duration: 1 })
-      break
-    case 'routes':
-      // Show routes between destinations
-      connectDestinations()
-      break
-    case 'clusters':
-      // Fit bounds to show all markers
-      if (markers.length > 0) {
-        const group = L.featureGroup(markers)
-        map.fitBounds(group.getBounds(), { padding: [50, 50], animate: true })
-      }
-      break
-  }
+  map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
 }
 
 function connectDestinations() {
@@ -640,24 +634,51 @@ function resetFilters() {
   searchQuery.value = ''
   showAllMarkers()
   if (map) {
-    map.setView([20, 0], 2, { animate: true, duration: 1 })
+    map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
   }
   currentMapView.value = 'world'
 }
 
 function initMap() {
+  const el = document.getElementById('map')
+  if (!el) {
+    console.warn('[HomeView] #map no encontrado; mapa omitido')
+    return
+  }
+
+  try {
   // Inicializar el mapa centrado en el mundo
   map = L.map('map', {
-    center: [20, 0],
-    zoom: 2,
-    zoomControl: true,
+    center: europeCenter,
+    zoom: europeZoom,
+    // Límite de zoom hacia afuera (zoom inverso).
+    // En Leaflet: zoom más bajo = más “zoom out”.
+    minZoom: 2,
+    // Acotar el mapa al “mundo” (evita salir de los límites pero con un margen
+    // mayor para que no se vean bordes en gris).
+    maxBounds: [
+      [-89, -180],
+      [89, 180],
+    ],
+    maxBoundsViscosity: 1.0,
+    noWrap: true,
+    zoomControl: false,
     scrollWheelZoom: true,
     dragging: true,
     touchZoom: true,
     doubleClickZoom: true,
-    boxZoom: true,
+    boxZoom: false,
     keyboard: true
   })
+
+  // Zoom buttons (+ / -) en la esquina inferior izquierda
+  L.control.zoom({ position: 'bottomleft' }).addTo(map)
+
+  // Asegura que maxBounds quede aplicado incluso si Leaflet lo resuelve tardíamente.
+  map.setMaxBounds([
+    [-89, -180],
+    [89, 180],
+  ])
 
   // Añadir capa de tiles de OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -725,6 +746,9 @@ function initMap() {
   setTimeout(() => {
     map?.invalidateSize()
   }, 100)
+  } catch (e) {
+    console.error('[HomeView] Error al inicializar Leaflet', e)
+  }
 }
 
 // Watch for map expansion to invalidate size
@@ -761,6 +785,8 @@ onUnmounted(() => {
     map.remove()
     map = null
   }
+
+  document.documentElement.classList.remove('map-expanded')
 })
 </script>
 
@@ -839,6 +865,13 @@ onUnmounted(() => {
 #map {
   position: relative;
   z-index: 1;
+}
+
+/* Colocar el control de zoom en la esquina inferior izquierda */
+:deep(.leaflet-control-zoom) {
+  top: auto !important;
+  bottom: 24px !important;
+  left: 16px !important;
 }
 
 /* Animación de pulso para los marcadores */

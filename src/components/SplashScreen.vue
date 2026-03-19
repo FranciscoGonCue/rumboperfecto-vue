@@ -6,6 +6,7 @@
     <div
       v-if="props.isVisible"
       class="fixed inset-0 z-[100] flex items-center justify-center bg-rumbo-orange"
+      style="background-color: #ff7f50"
     >
       <!-- Animated Plane -->
       <div

@@ -1,11 +1,6 @@
 <template>
-  <div class="relative min-h-screen text-gray-900 overflow-x-hidden">
-    <!-- STATIC FIXED ORANGE BACKGROUND -->
-    <div class="fixed inset-0 -z-10 bg-white" />
-
-    <SplashScreen :is-visible="showSplash" @complete="showSplash = false" />
-
-    <div v-if="!showSplash" class="flex flex-col min-h-screen">
+  <div class="relative min-h-screen text-gray-900 overflow-x-visible bg-white">
+    <div class="flex flex-col min-h-screen">
       <!-- RESPONSIVE HEADER -->
       <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-orange-100 px-6 py-4 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-3">
@@ -57,11 +52,9 @@
         </div>
       </header>
 
-      <!-- MAIN CONTENT AREA -->
-      <main class="flex-1 w-full max-w-[1440px] mx-auto">
-        <Transition :name="transitionName" mode="out-in">
-          <component :is="currentViewComponent" :key="store.currentView" />
-        </Transition>
+      <!-- MAIN CONTENT AREA (sin Transition: evita contenido con opacidad 0 colgada) -->
+      <main class="flex-1 w-full max-w-none mx-0 min-h-[50vh]">
+        <component :is="currentViewComponent" :key="store.currentView" />
       </main>
 
       <!-- MOBILE/TABLET BOTTOM NAVIGATION -->
@@ -92,10 +85,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { Home, Calendar, User, Plane, Plus } from 'lucide-vue-next'
-import SplashScreen from '@/components/SplashScreen.vue'
 import HomeView from '@/views/HomeView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
@@ -104,7 +96,6 @@ import NavButton from '@/components/NavButton.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const store = useAppStore()
-const showSplash = ref(true)
 
 const currentViewComponent = computed(() => {
   const views = {
@@ -112,13 +103,7 @@ const currentViewComponent = computed(() => {
     plan: PlannerView,
     perfil: ProfileView
   }
-  return views[store.currentView]
-})
-
-const transitionName = computed(() => {
-  if (store.currentView === 'inicio') return 'fade'
-  if (store.currentView === 'plan') return 'slide-left'
-  return 'scale'
+  return views[store.currentView] ?? HomeView
 })
 
 onMounted(() => {
@@ -140,6 +125,10 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+}
+
+html.map-expanded header {
+  display: none;
 }
 
 ::-webkit-scrollbar {

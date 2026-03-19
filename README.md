@@ -42,11 +42,23 @@ npm run dev
 
 La aplicación estará disponible en `http://localhost:3000`
 
+### Pantalla en blanco y consola: `504 (Outdated Optimize Dep)`
+
+Eso es la **caché de Vite** (`node_modules/.vite`) desincronizada con el navegador (muy habitual tras `npm install`, cambiar dependencias o tener **dos** `npm run dev` a la vez).
+
+1. Cierra **todas** las terminales donde corre Vite.
+2. Borra la caché: `rm -rf node_modules/.vite`
+3. Arranca de nuevo: `npm run dev:force` (o `npm run dev` tras el paso 2).
+4. En el navegador: recarga forzada (**Cmd+Shift+R**). Con DevTools abierto, activa **Disable cache** en la pestaña Red y recarga otra vez.
+
 ## 📦 Scripts Disponibles
 
 ```bash
 # Desarrollo
 npm run dev
+
+# Desarrollo forzando re-optimización de dependencias (tras 504 "Outdated Optimize Dep")
+npm run dev:force
 
 # Build para producción
 npm run build

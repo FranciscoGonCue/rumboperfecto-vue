@@ -1,6 +1,8 @@
 <template>
-  <div class="fixed inset-0 w-full h-full transition-colors duration-300"
-       :class="isDark ? 'bg-black' : 'bg-white'">
+  <div
+    class="pointer-events-none fixed inset-0 z-0 h-full w-full transition-colors duration-300"
+    :class="isDark ? 'bg-black' : 'bg-white'"
+  >
     <canvas id="canvas" ref="canvasRef" class="w-full h-full block" />
   </div>
 </template>
@@ -37,7 +39,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 let three: any = null
 let scene: Scene | null = null
-let composer: EffectComposer
+let composer: EffectComposer | undefined
 let iMesh: InstancedMesh | null = null
 let pointLight: PointLight
 let animationId: number
@@ -148,7 +150,7 @@ function initPostprocessing() {
   )
 
   three.onAfterResize(() => {
-    composer.setSize(three.size.width, three.size.height)
+    composer?.setSize(three.size.width, three.size.height)
     aaPass.material.uniforms.resolution.value.set(
       1 / three.size.width,
       1 / three.size.height
@@ -160,8 +162,8 @@ function initPostprocessing() {
 
 function animate() {
   animationId = requestAnimationFrame(animate)
-  
-  if (!three || !scene || !iMesh) return
+
+  if (!three || !scene || !iMesh || !composer) return
 
   target.copy(three.mouseV3)
   pointLight.position.copy(target)
@@ -181,7 +183,11 @@ function animate() {
   }
   iMesh.instanceMatrix.needsUpdate = true
 
-  composer.render()
+  try {
+    composer.render()
+  } catch (e) {
+    console.error('[ParticleBackground] render', e)
+  }
 }
 
 function init() {
