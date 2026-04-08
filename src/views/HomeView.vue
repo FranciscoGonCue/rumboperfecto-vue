@@ -85,7 +85,7 @@
       >
         <div class="pb-32 lg:pb-12 pt-6 lg:pt-12 px-6 lg:px-12">
           <!-- Search Bar -->
-          <div class="relative mb-10 -mt-12 lg:mt-0 lg:max-w-xl">
+          <div class="relative mb-10 -mt-12 lg:mt-0 w-full">
             <div class="flex items-center bg-white lg:bg-gray-50 rounded-3xl px-6 py-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)] lg:shadow-none border border-gray-100 lg:border-transparent lg:focus-within:border-orange-200 transition-all">
               <Search :size="22" class="text-rumbo-orange mr-4" />
               <input
@@ -110,7 +110,7 @@
               v-for="(cat, idx) in categories"
               :key="idx"
               class="flex flex-col items-center justify-center space-y-3 p-6 rounded-[32px] transition-all shadow-sm border border-transparent hover:border-orange-100 hover:shadow-xl group"
-              :class="cat.color"
+              :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               @click="filterByCategory(cat.label)"
             >
               <div class="p-4 bg-white rounded-2xl shadow-sm group-hover:shadow-md transition-all">
@@ -240,7 +240,7 @@
             >
               <div 
                 class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                :class="cat.color"
+                :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               >
                 <component :is="cat.icon" :size="20" />
               </div>
@@ -355,7 +355,7 @@
             >
               <div 
                 class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
-                :class="cat.color"
+                :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               >
                 <component :is="cat.icon" :size="18" />
               </div>
@@ -427,9 +427,24 @@ import { accommodationsMock } from '@/mocks/accommodations'
 import { useAppStore } from '@/stores/app'
 
 const categories = [
-  { icon: Hotel, label: 'Hoteles', color: 'bg-blue-50 text-blue-500' },
-  { icon: Compass, label: 'Aventuras', color: 'bg-emerald-50 text-emerald-500' },
-  { icon: Utensils, label: 'Comida', color: 'bg-orange-50 text-rumbo-orange' }
+  {
+    icon: Hotel,
+    label: 'Alojamiento',
+    color: 'bg-blue-50 text-blue-500',
+    activeColor: 'bg-blue-200 text-blue-700'
+  },
+  {
+    icon: Compass,
+    label: 'Aventuras',
+    color: 'bg-emerald-50 text-emerald-500',
+    activeColor: 'bg-emerald-200 text-emerald-700'
+  },
+  {
+    icon: Utensils,
+    label: 'Comida',
+    color: 'bg-orange-50 text-rumbo-orange',
+    activeColor: 'bg-orange-200 text-orange-700'
+  }
 ]
 
 const mapViews = [
@@ -443,7 +458,7 @@ const feedItems = accommodationsMock.map((acc, index) => ({
   title: acc.title,
   price: `${acc.currency} ${acc.pricePerNight}`,
   rating: acc.rating,
-  category: 'Hoteles',
+  category: 'Alojamiento',
   img: acc.image,
   lat: 40.4168 + (index * 1.25),
   lng: -3.7038 + (index * 1.25)
