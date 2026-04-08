@@ -13,7 +13,7 @@ export interface Trip {
   activities: Record<number, Activity[]>
 }
 
-export type View = 'inicio' | 'plan' | 'perfil'
+export type View = 'inicio' | 'plan' | 'perfil' | 'alojamiento'
 
 export interface User {
   id: string
@@ -35,4 +35,24 @@ export interface MapLocation {
   lng: number
   title: string
   description?: string
+}
+
+export interface Accommodation {
+  id: string
+  title: string
+  location: string
+  city: string
+  country: string
+  description: string
+  pricePerNight: number
+  currency: string
+  rating: number
+  reviewsCount: number
+  image: string
+  amenities: string[]
+  tags: string[]
+  isFeatured: boolean
+  availableFrom: string
+  availableTo: string
+  unavailableDates: string[]
 }

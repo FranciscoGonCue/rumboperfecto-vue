@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Trip, User, Activity } from '@/types'
+import type { Trip, User, Activity, View } from '@/types'
 
 export const useAppStore = defineStore('app', () => {
   // State
-  const currentView = ref<'inicio' | 'plan' | 'perfil'>('inicio')
+  const currentView = ref<View>('inicio')
+  const selectedAccommodationId = ref<string | null>(null)
   const theme = ref<'light' | 'dark'>('light')
   const trips = ref<Trip[]>([])
   const user = ref<User>({
@@ -21,8 +22,18 @@ export const useAppStore = defineStore('app', () => {
   const isDark = computed(() => theme.value === 'dark')
 
   // Actions
-  function setCurrentView(view: 'inicio' | 'plan' | 'perfil') {
+  function setCurrentView(view: View) {
     currentView.value = view
+  }
+
+  function openAccommodationDetail(accommodationId: string) {
+    selectedAccommodationId.value = accommodationId
+    currentView.value = 'alojamiento'
+  }
+
+  function closeAccommodationDetail() {
+    selectedAccommodationId.value = null
+    currentView.value = 'inicio'
   }
 
   function toggleTheme() {
@@ -99,6 +110,7 @@ export const useAppStore = defineStore('app', () => {
   return {
     // State
     currentView,
+    selectedAccommodationId,
     theme,
     trips,
     user,
@@ -108,6 +120,8 @@ export const useAppStore = defineStore('app', () => {
     isDark,
     // Actions
     setCurrentView,
+    openAccommodationDetail,
+    closeAccommodationDetail,
     toggleTheme,
     loadThemeFromStorage,
     loadTripsFromStorage,

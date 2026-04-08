@@ -140,6 +140,7 @@
                   v-for="item in filteredItems"
                   :key="item.id"
                   class="relative rounded-[40px] overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.06)] bg-white border border-gray-50 group cursor-pointer hover:-translate-y-2 transition-transform duration-300"
+                  @click="openAccommodationDetail(item.id)"
                 >
                   <div class="relative h-64 overflow-hidden">
                     <img
@@ -167,7 +168,10 @@
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Desde</span>
                         <span class="text-rumbo-orange font-black text-2xl tracking-tighter">{{ item.price }}</span>
                       </div>
-                      <button class="p-4 bg-gray-50 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all shadow-sm">
+                      <button
+                        class="p-4 bg-gray-50 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all shadow-sm"
+                        @click.stop="openAccommodationDetail(item.id)"
+                      >
                         <Compass :size="24" />
                       </button>
                     </div>
@@ -419,6 +423,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { accommodationsMock } from '@/mocks/accommodations'
+import { useAppStore } from '@/stores/app'
 
 const categories = [
   { icon: Hotel, label: 'Hoteles', color: 'bg-blue-50 text-blue-500' },
@@ -432,18 +438,21 @@ const mapViews = [
   { id: 'clusters', label: 'Agrupados', description: 'Por región', icon: Layers }
 ]
 
-const feedItems = [
-  { id: 1, title: 'Escapada a Bali', price: '$450', rating: 4.8, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80', lat: -8.3405, lng: 115.0920 },
-  { id: 2, title: 'Ruta Gastronómica', price: '$80', rating: 4.9, category: 'Comida', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80', lat: 41.3851, lng: 2.1734 },
-  { id: 3, title: 'Aventura en los Alpes', price: '$220', rating: 4.7, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80', lat: 46.5197, lng: 7.9738 },
-  { id: 4, title: 'Playa Secreta', price: '$150', rating: 4.5, category: 'Hoteles', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80', lat: 18.7883, lng: -98.9856 },
-  { id: 5, title: 'Safari en Kenya', price: '$890', rating: 5.0, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=400&q=80', lat: -1.2921, lng: 36.8219 },
-  { id: 6, title: 'Luces de Tokyo', price: '$540', rating: 4.6, category: 'Hoteles', img: 'https://images.unsplash.com/photo-1540959733332-e94e270b4d82?auto=format&fit=crop&w=400&q=80', lat: 35.6762, lng: 139.6503 }
-]
+const feedItems = accommodationsMock.map((acc, index) => ({
+  id: acc.id,
+  title: acc.title,
+  price: `${acc.currency} ${acc.pricePerNight}`,
+  rating: acc.rating,
+  category: 'Hoteles',
+  img: acc.image,
+  lat: 40.4168 + (index * 1.25),
+  lng: -3.7038 + (index * 1.25)
+}))
 
+const store = useAppStore()
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
-const favorites = ref<number[]>([])
+const favorites = ref<string[]>([])
 const mapExpanded = ref(false)
 const currentMapView = ref('world')
 const showMobileSidebar = ref(false)
@@ -537,13 +546,17 @@ function filterByCategory(category: string) {
   }
 }
 
-function toggleFavorite(id: number) {
+function toggleFavorite(id: string) {
   const index = favorites.value.indexOf(id)
   if (index > -1) {
     favorites.value.splice(index, 1)
   } else {
     favorites.value.push(id)
   }
+}
+
+function openAccommodationDetail(id: string) {
+  store.openAccommodationDetail(id)
 }
 
 function exitMapMode() {

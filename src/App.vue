@@ -91,6 +91,7 @@ import { Home, Calendar, User, Plane, Plus } from 'lucide-vue-next'
 import HomeView from '@/views/HomeView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
 import DesktopNavLink from '@/components/DesktopNavLink.vue'
 import NavButton from '@/components/NavButton.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -101,7 +102,8 @@ const currentViewComponent = computed(() => {
   const views = {
     inicio: HomeView,
     plan: PlannerView,
-    perfil: ProfileView
+    perfil: ProfileView,
+    alojamiento: AccommodationDetailView
   }
   return views[store.currentView] ?? HomeView
 })
