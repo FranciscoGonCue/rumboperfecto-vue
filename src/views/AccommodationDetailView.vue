@@ -40,6 +40,11 @@
               <p class="text-sm text-gray-600 mt-1">
                 ⭐ {{ selectedAccommodation.rating }} ({{ selectedAccommodation.reviewsCount }} reseñas)
               </p>
+              <button
+                class="mt-3 inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black uppercase tracking-wider shadow-[0_10px_24px_rgba(16,185,129,0.35)] hover:from-emerald-600 hover:to-green-700 hover:shadow-[0_14px_28px_rgba(16,185,129,0.45)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98]"
+              >
+                Comprar
+              </button>
             </div>
           </div>
 
