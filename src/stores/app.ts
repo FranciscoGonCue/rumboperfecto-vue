@@ -5,6 +5,24 @@ import { activitiesApi, authApi, setSessionExpiredHandler, tripsApi } from '@/se
 import type { Activity, Trip, User, View } from '@/types'
 
 const THEME_STORAGE_KEY = 'rumbo_theme'
+const LOCAL_TRIPS_KEY = 'rumbo_local_trips'
+
+function loadLocalTrips(): Trip[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_TRIPS_KEY)
+    return raw ? (JSON.parse(raw) as Trip[]) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLocalTrips(trips: Trip[]): void {
+  try {
+    localStorage.setItem(LOCAL_TRIPS_KEY, JSON.stringify(trips))
+  } catch {
+    // Storage might be full or unavailable
+  }
+}
 
 const GUEST_USER: User = {
   id: '0',
@@ -17,7 +35,7 @@ const GUEST_USER: User = {
 export const useAppStore = defineStore('app', () => {
   const currentView = ref<View>('inicio')
   const theme = ref<'light' | 'dark'>('light')
-  const trips = ref<Trip[]>([])
+  const trips = ref<Trip[]>(loadLocalTrips())
   const user = ref<User>({ ...GUEST_USER })
   const selectedAccommodationId = ref<string | null>(null)
 
@@ -74,7 +92,7 @@ export const useAppStore = defineStore('app', () => {
 
   function clearSessionState(): void {
     authApi.clearSession()
-    trips.value = []
+    trips.value = loadLocalTrips()
     user.value = { ...GUEST_USER }
   }
 
@@ -160,12 +178,19 @@ export const useAppStore = defineStore('app', () => {
   }
 
   async function addTrip(trip: Trip): Promise<void> {
+    networkError.value = null
+
     if (!isAuthenticated.value) {
-      networkError.value = 'Debes iniciar sesion para crear viajes.'
+      const localTrip: Trip = {
+        ...trip,
+        id: `local-${Date.now()}`,
+        activities: trip.activities ?? {},
+      }
+      trips.value.unshift(localTrip)
+      saveLocalTrips(trips.value)
       return
     }
 
-    networkError.value = null
     try {
       const created = await tripsApi.create({
         title: trip.title,
@@ -173,6 +198,7 @@ export const useAppStore = defineStore('app', () => {
         end_date: trip.endDate,
       })
       trips.value.unshift(created)
+      saveLocalTrips(trips.value)
     } catch {
       networkError.value = 'No se pudo crear el viaje.'
       throw new Error('trip-create-failed')
@@ -180,15 +206,18 @@ export const useAppStore = defineStore('app', () => {
   }
 
   async function deleteTrip(id: string): Promise<void> {
-    if (!isAuthenticated.value) {
-      networkError.value = 'Debes iniciar sesion para eliminar viajes.'
+    networkError.value = null
+
+    if (!isAuthenticated.value || id.startsWith('local-')) {
+      trips.value = trips.value.filter((trip) => trip.id !== id)
+      saveLocalTrips(trips.value)
       return
     }
 
-    networkError.value = null
     try {
       await tripsApi.delete(id)
       trips.value = trips.value.filter((trip) => trip.id !== id)
+      saveLocalTrips(trips.value)
     } catch {
       networkError.value = 'No se pudo eliminar el viaje.'
       throw new Error('trip-delete-failed')
@@ -196,12 +225,22 @@ export const useAppStore = defineStore('app', () => {
   }
 
   async function addActivity(tripId: string, day: number, activity: Activity): Promise<void> {
-    if (!isAuthenticated.value) {
-      networkError.value = 'Debes iniciar sesion para agregar actividades.'
+    networkError.value = null
+
+    if (!isAuthenticated.value || tripId.startsWith('local-')) {
+      const trip = trips.value.find((t) => t.id === tripId)
+      if (!trip) {
+        networkError.value = 'Viaje no encontrado.'
+        throw new Error('trip-not-found')
+      }
+      if (!trip.activities[day]) {
+        trip.activities[day] = []
+      }
+      trip.activities[day].push({ ...activity, id: `local-act-${Date.now()}` })
+      saveLocalTrips(trips.value)
       return
     }
 
-    networkError.value = null
     try {
       await activitiesApi.create({
         trip: tripId,
@@ -211,6 +250,7 @@ export const useAppStore = defineStore('app', () => {
         time: activity.time,
       })
       await loadTrips()
+      saveLocalTrips(trips.value)
     } catch {
       networkError.value = 'No se pudo agregar la actividad.'
       throw new Error('activity-create-failed')

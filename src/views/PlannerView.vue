@@ -64,6 +64,26 @@
         </div>
       </div>
 
+      <!-- Network Error Banner -->
+      <Transition name="fade-down">
+        <div
+          v-if="store.networkError"
+          class="mb-6 flex items-center gap-3 px-5 py-4 rounded-2xl border"
+          :class="store.isDark
+            ? 'bg-red-950/30 border-red-800/40 text-red-300'
+            : 'bg-red-50 border-red-200 text-red-700'"
+        >
+          <AlertCircle :size="18" class="flex-shrink-0" />
+          <p class="text-sm font-bold">{{ store.networkError }}</p>
+          <button
+            class="ml-auto text-xs font-black uppercase tracking-wider opacity-60 hover:opacity-100"
+            @click="store.networkError = null"
+          >
+            Cerrar
+          </button>
+        </div>
+      </Transition>
+
       <!-- EMPTY STATE -->
       <div v-if="store.trips.length === 0" class="text-center py-20">
         <div class="w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center"
@@ -248,12 +268,13 @@
 
               <button
                 type="submit"
-                class="w-full py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+                :disabled="creatingTrip"
+                class="w-full py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                 :class="store.isDark
                   ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500'
                   : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200'"
               >
-                Crear Viaje
+                {{ creatingTrip ? 'Creando...' : 'Crear Viaje' }}
               </button>
             </form>
           </div>
@@ -474,7 +495,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Plus, Plane, Calendar, MapPin, Activity, Trash2, X, Clock } from 'lucide-vue-next'
+import { Plus, Plane, Calendar, MapPin, Activity, Trash2, X, Clock, AlertCircle } from 'lucide-vue-next'
 import type { Trip, Activity as ActivityType } from '@/types'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -487,6 +508,7 @@ const store = useAppStore()
 const viewMode = ref<'cards' | 'calendar'>('cards')
 const showAddTripModal = ref(false)
 const showAddActivityModal = ref(false)
+const creatingTrip = ref(false)
 const selectedTrip = ref<Trip | null>(null)
 const selectedDay = ref(1)
 
@@ -595,6 +617,7 @@ function handleEventClassNames(_info: any) {
 }
 
 async function handleAddTrip() {
+  creatingTrip.value = true
   const trip: Trip = {
     id: Date.now().toString(),
     title: newTrip.title,
@@ -604,13 +627,15 @@ async function handleAddTrip() {
   }
   try {
     await store.addTrip(trip)
+    showAddTripModal.value = false
+    newTrip.title = ''
+    newTrip.startDate = ''
+    newTrip.endDate = ''
   } catch {
-    return
+    // store.networkError is set; the banner will display it
+  } finally {
+    creatingTrip.value = false
   }
-  showAddTripModal.value = false
-  newTrip.title = ''
-  newTrip.startDate = ''
-  newTrip.endDate = ''
 }
 
 async function handleAddActivity() {
@@ -694,6 +719,16 @@ watch(() => store.trips, () => {
 .shadow-orange-900\/30 { --tw-shadow-color: rgba(124,45,18,0.3); }
 .shadow-orange-900\/40 { --tw-shadow-color: rgba(124,45,18,0.4); }
 .shadow-orange-900\/60 { --tw-shadow-color: rgba(124,45,18,0.6); }
+
+.fade-down-enter-active,
+.fade-down-leave-active {
+  transition: all 0.35s ease;
+}
+.fade-down-enter-from,
+.fade-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
 
 .modal-enter-active,
 .modal-leave-active {

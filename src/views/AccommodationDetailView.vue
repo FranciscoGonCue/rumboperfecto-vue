@@ -383,12 +383,6 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function addOneDay(dateStr: string) {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
-}
-
 function isDateUnavailable(dateStr: string) {
   if (!selectedAccommodation.value) return true
   if (dateStr < selectedAccommodation.value.availableFrom || dateStr > selectedAccommodation.value.availableTo) return true

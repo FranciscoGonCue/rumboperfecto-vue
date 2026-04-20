@@ -6,8 +6,9 @@
       :class="[
         mapExpanded 
           ? 'h-screen w-full lg:w-[75%]' 
-          : 'h-[25vh] lg:h-full lg:w-[20%]'
+          : (isMobile ? 'h-[25vh]' : (mapCollapsed ? 'lg:h-full lg:w-0' : 'lg:h-full lg:w-[20%]'))
       ]"
+      :style="(!mapExpanded && !isMobile && mapCollapsed) ? 'pointer-events:none;' : ''"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
@@ -32,6 +33,19 @@
 
       <!-- Interactive Leaflet Map -->
       <div id="map" class="h-full w-full" />
+
+      <!-- Collapse / Expand Map (desktop) -->
+      <Transition name="fade">
+        <button
+          v-if="!mapExpanded && !isMobile"
+          @click.stop="toggleMapCollapsed"
+          class="absolute top-5 -right-3 z-[1000] hidden lg:flex items-center justify-center w-10 h-10 rounded-2xl backdrop-blur-md shadow-xl transition-all"
+          :style="store.isDark ? 'background: rgba(17,17,24,0.92); border: 1px solid rgba(255,255,255,0.1);' : 'background: rgba(255,255,255,0.95); border: 1px solid rgba(15,23,42,0.08);'"
+        >
+          <ChevronRight v-if="mapCollapsed" :size="18" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'" />
+          <ChevronLeft v-else :size="18" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'" />
+        </button>
+      </Transition>
 
       <!-- Desktop Map UI Elements -->
       <Transition name="fade">
@@ -82,44 +96,111 @@
     <div 
       v-if="!mapExpanded"
       key="feed"
-      class="w-full lg:w-[80%] lg:h-full overflow-y-auto lg:rounded-l-[50px] relative z-20 shadow-[-20px_0_60px_rgba(0,0,0,0.4)]"
+      class="w-full lg:h-full overflow-y-auto lg:rounded-l-[50px] relative z-20 shadow-[-20px_0_60px_rgba(0,0,0,0.4)]"
+      :class="(!isMobile && mapCollapsed) ? 'lg:w-full' : 'lg:w-[80%]'"
       :style="store.isDark ? 'background: var(--rp-bg);' : 'background: #ffffff;'"
     >
       <div class="pb-32 lg:pb-12 pt-6 lg:pt-12 px-6 lg:px-10">
         <!-- Search Bar -->
-        <div class="relative mb-10 -mt-12 lg:mt-0 w-full">
-          <div class="flex items-center rounded-2xl px-5 py-4 transition-all"
+        <div class="relative mb-6 -mt-12 lg:mt-0 w-full">
+          <div class="flex flex-col lg:flex-row lg:items-center rounded-2xl px-4 py-3 lg:px-5 lg:py-4 transition-all gap-3 lg:gap-0"
                :style="store.isDark
                  ? 'background: var(--rp-surface); border: 1px solid var(--rp-border); box-shadow: 0 8px 32px rgba(0,0,0,0.4);'
                  : 'background: white; box-shadow: 0 15px 30px rgba(0,0,0,0.08); border: 1px solid #f1f5f9;'">
-            <Search :size="20" class="text-rp-accent mr-3 flex-shrink-0" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Busca tu próximo destino..."
-              class="flex-1 outline-none text-sm font-medium bg-transparent"
-              :style="store.isDark
-                ? 'color: var(--rp-text); caret-color: var(--rp-accent);'
-                : 'color: #374151;'"
-              :class="store.isDark ? 'placeholder:text-rp-muted' : 'placeholder:text-gray-400'"
-              @keyup.enter="handleSearch"
-            />
+            <!-- Destino -->
+            <div class="flex items-center flex-1 min-w-0 px-3 py-2.5 rounded-xl transition-all"
+                 :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-50'">
+              <Search :size="18" class="text-rp-accent mr-2 flex-shrink-0" />
+              <div class="flex flex-col min-w-0 flex-1">
+                <span class="text-[10px] font-black uppercase tracking-widest"
+                      :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Destino</span>
+                <input
+                  v-model="destinationQuery"
+                  type="text"
+                  placeholder="¿A dónde vamos?"
+                  class="w-full outline-none text-sm font-bold bg-transparent"
+                  :style="store.isDark
+                    ? 'color: var(--rp-text); caret-color: var(--rp-accent);'
+                    : 'color: #111827;'"
+                  :class="store.isDark ? 'placeholder:text-rp-muted' : 'placeholder:text-gray-400'"
+                  @keyup.enter="handleSearch"
+                />
+              </div>
+            </div>
+
+            <!-- Fechas -->
+            <div class="grid grid-cols-2 gap-2 lg:gap-0 lg:flex lg:flex-[0.95] lg:items-center lg:mx-3">
+              <div class="flex items-center px-3 py-2.5 rounded-xl transition-all"
+                   :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-50'">
+                <Calendar :size="18" class="text-rp-accent mr-2 flex-shrink-0" />
+                <div class="flex flex-col min-w-0 flex-1">
+                  <span class="text-[10px] font-black uppercase tracking-widest"
+                        :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Check-in</span>
+                  <input
+                    v-model="checkIn"
+                    type="date"
+                    class="w-full outline-none text-sm font-bold bg-transparent"
+                    :style="store.isDark ? 'color: var(--rp-text);' : 'color: #111827;'"
+                  />
+                </div>
+              </div>
+              <div class="flex items-center px-3 py-2.5 rounded-xl transition-all"
+                   :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-50'">
+                <Calendar :size="18" class="text-rp-accent mr-2 flex-shrink-0" />
+                <div class="flex flex-col min-w-0 flex-1">
+                  <span class="text-[10px] font-black uppercase tracking-widest"
+                        :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Check-out</span>
+                  <input
+                    v-model="checkOut"
+                    type="date"
+                    class="w-full outline-none text-sm font-bold bg-transparent"
+                    :style="store.isDark ? 'color: var(--rp-text);' : 'color: #111827;'"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Huéspedes -->
+            <div class="flex items-center px-3 py-2.5 rounded-xl transition-all lg:flex-[0.55]"
+                 :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-50'">
+              <Users :size="18" class="text-rp-accent mr-2 flex-shrink-0" />
+              <div class="flex flex-col min-w-0 flex-1">
+                <span class="text-[10px] font-black uppercase tracking-widest"
+                      :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Huéspedes</span>
+                <div class="flex items-center justify-between gap-2">
+                  <input
+                    v-model.number="guests"
+                    type="number"
+                    min="1"
+                    max="20"
+                    class="w-full outline-none text-sm font-bold bg-transparent"
+                    :style="store.isDark ? 'color: var(--rp-text);' : 'color: #111827;'"
+                    @keyup.enter="handleSearch"
+                  />
+                  <span class="text-[10px] font-black uppercase tracking-widest"
+                        :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                    {{ guestsLabel }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <button
-              class="hidden lg:flex text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest ml-3 cursor-pointer transition-colors"
+              class="hidden lg:flex text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest ml-0 lg:ml-3 cursor-pointer transition-colors"
               style="background: var(--rp-accent);"
               @click="handleSearch"
             >
-              Buscar
+              Buscar y planificar
             </button>
           </div>
         </div>
 
-        <!-- Categories Grid -->
-        <div class="grid grid-cols-3 gap-3 mb-10">
+        <!-- Compact Categories (chips) -->
+        <div class="flex flex-wrap gap-2.5 mb-8">
           <button
             v-for="(cat, idx) in categories"
             :key="idx"
-            class="flex flex-col items-center justify-center space-y-2.5 p-5 rounded-[28px] transition-all border"
+            class="flex items-center space-x-2 px-4 py-2.5 rounded-full transition-all border"
             :class="store.isDark
               ? selectedCategory === cat.label
                 ? 'border-rp-accent/40 bg-orange-950/20 shadow-[0_4px_16px_rgba(249,115,22,0.12)]'
@@ -129,17 +210,93 @@
                 : cat.color + ' border-transparent hover:border-orange-100 hover:shadow-xl'"
             @click="filterByCategory(cat.label)"
           >
-            <div class="p-3.5 rounded-xl shadow-sm transition-all"
-                 :class="store.isDark
-                   ? selectedCategory === cat.label
-                     ? 'bg-rp-accent/20'
-                     : 'bg-rp-surface-2'
-                   : 'bg-white group-hover:shadow-md'">
-              <component :is="cat.icon" :size="24" :class="store.isDark ? 'text-rp-accent' : ''" />
-            </div>
-            <span class="text-[10px] font-black uppercase tracking-widest"
-                  :class="store.isDark ? 'text-rp-muted' : ''">{{ cat.label }}</span>
+            <component :is="cat.icon" :size="18" :class="store.isDark ? 'text-rp-accent' : ''" />
+            <span class="text-[11px] font-black uppercase tracking-widest"
+                  :class="store.isDark ? 'text-rp-muted' : 'text-gray-800'">{{ cat.label }}</span>
           </button>
+
+          <!-- Map toggle (desktop) -->
+          <button
+            v-if="!isMobile"
+            class="ml-auto hidden lg:flex items-center space-x-2 px-4 py-2.5 rounded-full transition-all border"
+            :class="store.isDark
+              ? 'border-rp-border bg-rp-surface hover:border-rp-accent/30'
+              : 'border-transparent bg-gray-50 hover:bg-orange-50'"
+            @click="toggleMapCollapsed"
+          >
+            <MapPin :size="18" class="text-rp-accent" />
+            <span class="text-[11px] font-black uppercase tracking-widest"
+                  :class="store.isDark ? 'text-rp-muted' : 'text-gray-800'">
+              {{ mapCollapsed ? 'Ver en el mapa' : 'Ocultar mapa' }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Planner highlight -->
+        <div class="mb-10">
+          <div class="rounded-[32px] p-6 lg:p-7 border transition-all"
+               :style="store.isDark
+                 ? 'background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(17,17,24,0.9) 55%); border: 1px solid rgba(249,115,22,0.18);'
+                 : 'background: linear-gradient(135deg, rgba(249,115,22,0.14) 0%, rgba(255,255,255,1) 55%); border: 1px solid rgba(15,23,42,0.06);'"
+          >
+            <div class="flex items-start justify-between gap-6">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="bg-rp-accent text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/30">
+                    <Compass :size="20" />
+                  </div>
+                  <h3 class="text-lg lg:text-xl font-black uppercase tracking-tight"
+                      :class="store.isDark ? 'text-rp-text' : 'text-gray-900'"
+                      style="font-family: 'Syne', sans-serif;">
+                    Tus próximos planes
+                  </h3>
+                </div>
+
+                <p class="text-sm font-medium leading-snug"
+                   :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                  Continúa organizando tu itinerario: alojamientos, actividades y rutas en un solo lugar.
+                </p>
+
+                <div v-if="nextTrip" class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-black uppercase tracking-widest"
+                         :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                      Tu viaje en curso
+                    </div>
+                    <div class="font-black uppercase tracking-tight text-sm truncate"
+                         :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">
+                      {{ nextTrip.title }}
+                    </div>
+                    <div class="text-xs font-bold"
+                         :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                      {{ formatTripDates(nextTrip.startDate, nextTrip.endDate) }}
+                    </div>
+                  </div>
+                  <button
+                    class="px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all"
+                    style="background: var(--rp-accent);"
+                    @click="goToPlan"
+                  >
+                    Continuar organizando
+                  </button>
+                </div>
+
+                <div v-else class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div class="text-xs font-bold"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                    Aún no tienes un viaje creado. Empieza uno y vuelve aquí para retomarlo en 1 clic.
+                  </div>
+                  <button
+                    class="px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all"
+                    style="background: var(--rp-accent);"
+                    @click="goToPlan"
+                  >
+                    Crear mi plan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Feed Section -->
@@ -195,6 +352,17 @@
                       :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
                     {{ item.title }}
                   </h4>
+                  <div class="flex items-center gap-2 mt-2">
+                    <MapPin :size="14" class="text-rp-accent flex-shrink-0" />
+                    <span class="text-xs font-bold truncate"
+                          :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                      {{ item.city }}, {{ item.country }}
+                    </span>
+                  </div>
+                  <div class="mt-1 text-[11px] font-bold uppercase tracking-widest"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                    Desde {{ item.price }} / noche
+                  </div>
                   <div class="flex justify-between items-center mt-5">
                     <div class="flex flex-col">
                       <span class="text-[10px] font-bold uppercase tracking-widest"
@@ -510,7 +678,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu } from 'lucide-vue-next'
+import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu, Calendar, Users, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { accommodationsMock } from '@/mocks/accommodations'
@@ -547,15 +715,25 @@ const feedItems = accommodationsMock.map((acc, index) => ({
   id: acc.id,
   title: acc.title,
   price: `${acc.currency} ${acc.pricePerNight}`,
+  pricePerNight: acc.pricePerNight,
+  currency: acc.currency,
   rating: acc.rating,
   category: 'Alojamiento',
   img: acc.image,
+  city: acc.city,
+  country: acc.country,
+  availableFrom: acc.availableFrom,
+  availableTo: acc.availableTo,
+  unavailableDates: acc.unavailableDates,
   lat: 40.4168 + (index * 1.25),
   lng: -3.7038 + (index * 1.25)
 }))
 
 const store = useAppStore()
-const searchQuery = ref('')
+const destinationQuery = ref('')
+const checkIn = ref('')
+const checkOut = ref('')
+const guests = ref(2)
 const selectedCategory = ref<string | null>(null)
 const favorites = ref<string[]>([])
 const mapExpanded = ref(false)
@@ -563,6 +741,7 @@ const currentMapView = ref('world')
 const showMobileSidebar = ref(false)
 const isMobile = ref(false)
 const isExitingMapMode = ref(false)
+const mapCollapsed = ref(true)
 
 watch(mapExpanded, (expanded) => {
   document.documentElement.classList.toggle('map-expanded', expanded)
@@ -581,15 +760,30 @@ const filteredItems = computed(() => {
   if (selectedCategory.value) {
     items = items.filter(item => item.category === selectedCategory.value)
   }
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    items = items.filter(item => item.title.toLowerCase().includes(query))
+  if (destinationQuery.value) {
+    const query = destinationQuery.value.toLowerCase()
+    items = items.filter(item => item.title.toLowerCase().includes(query) || `${item.city} ${item.country}`.toLowerCase().includes(query))
   }
+
+  if (checkIn.value && checkOut.value) {
+    items = items.filter(item => isAccommodationAvailable(item, checkIn.value, checkOut.value))
+  }
+
   return items
 })
 
+const nextTrip = computed(() => {
+  if (!store.trips?.length) return null
+  return store.trips[0] ?? null
+})
+
+const guestsLabel = computed(() => (guests.value === 1 ? '1' : `${guests.value}`))
+
 function checkIsMobile() {
   isMobile.value = window.innerWidth < 1024
+  if (isMobile.value) {
+    mapCollapsed.value = false
+  }
 }
 
 function handleTouchStart(event: TouchEvent) {
@@ -625,7 +819,13 @@ function toggleMobileSidebar() {
 }
 
 function handleSearch() {
-  console.log('Searching for:', searchQuery.value)
+  console.log('Search:', {
+    destination: destinationQuery.value,
+    checkIn: checkIn.value,
+    checkOut: checkOut.value,
+    guests: guests.value,
+    category: selectedCategory.value
+  })
 }
 
 function filterByCategory(category: string) {
@@ -703,12 +903,75 @@ function showAllMarkers() {
 
 function resetFilters() {
   selectedCategory.value = null
-  searchQuery.value = ''
+  destinationQuery.value = ''
+  checkIn.value = ''
+  checkOut.value = ''
+  guests.value = 2
   showAllMarkers()
   if (map) {
     map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
   }
   currentMapView.value = 'world'
+}
+
+function toggleMapCollapsed() {
+  if (isMobile.value || mapExpanded.value) return
+  mapCollapsed.value = !mapCollapsed.value
+  if (!mapCollapsed.value) {
+    setTimeout(() => map?.invalidateSize(), 750)
+  }
+}
+
+function formatTripDates(start: string, end: string): string {
+  if (!start || !end) return ''
+  const s = new Date(start)
+  const e = new Date(end)
+  const fmt = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' })
+  return `${fmt.format(s)} – ${fmt.format(e)}`
+}
+
+function goToPlan() {
+  store.setCurrentView('plan')
+}
+
+function isoToMidnight(iso: string): Date {
+  const d = new Date(iso)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return d
+}
+
+function toISODate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function isAccommodationAvailable(
+  item: (typeof feedItems)[number],
+  inDateIso: string,
+  outDateIso: string
+): boolean {
+  const checkInDate = isoToMidnight(inDateIso)
+  const checkOutDate = isoToMidnight(outDateIso)
+  if (!(checkInDate < checkOutDate)) return true
+
+  const availableFrom = isoToMidnight(item.availableFrom)
+  const availableTo = isoToMidnight(item.availableTo)
+  if (checkInDate < availableFrom) return false
+  if (checkOutDate > addDays(availableTo, 1)) return false
+
+  const blocked = new Set(item.unavailableDates)
+  for (let d = new Date(checkInDate); d < checkOutDate; d = addDays(d, 1)) {
+    if (blocked.has(toISODate(d))) return false
+  }
+  return true
 }
 
 function initMap() {
