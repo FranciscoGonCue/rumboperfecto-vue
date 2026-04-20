@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import apiService from '@/services/api'
 
 export function useTasks() {
-  const tasks = ref([])
+  const tasks = ref<any[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -10,7 +10,8 @@ export function useTasks() {
     loading.value = true
     error.value = null
     try {
-      tasks.value = await apiService.get('/tasks/')
+      const response = await apiService.get('/tasks/')
+      tasks.value = response.data
     } catch (err: any) {
       error.value = err.message
     } finally {
@@ -22,9 +23,9 @@ export function useTasks() {
     loading.value = true
     error.value = null
     try {
-      const newTask = await apiService.post('/tasks/', taskData)
-      tasks.value.push(newTask)
-      return newTask
+      const response = await apiService.post('/tasks/', taskData)
+      tasks.value.push(response.data)
+      return response.data
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -37,7 +38,8 @@ export function useTasks() {
     loading.value = true
     error.value = null
     try {
-      const updated = await apiService.put(`/tasks/${id}/`, taskData)
+      const response = await apiService.put(`/tasks/${id}/`, taskData)
+      const updated = response.data
       const index = tasks.value.findIndex((t: any) => t.id === id)
       if (index !== -1) {
         tasks.value[index] = updated

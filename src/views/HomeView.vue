@@ -559,7 +559,7 @@ function exitMapMode() {
   }
 }
 
-function changeMapView(viewId: string) {
+function changeMapView(_viewId: string) {
   // Solo se permite la vista mundial.
   // Aunque se llame con otro id (por ejemplo por un click viejo o por código),
   // forzamos siempre la vista 'world'.
@@ -568,34 +568,6 @@ function changeMapView(viewId: string) {
   if (!map) return
 
   map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
-}
-
-function connectDestinations() {
-  // Remove existing polylines
-  map?.eachLayer((layer) => {
-    if (layer instanceof L.Polyline && !(layer instanceof L.Marker)) {
-      map?.removeLayer(layer)
-    }
-  })
-
-  // Create routes between visible destinations
-  const visibleItems = filteredItems.value
-  if (visibleItems.length < 2) return
-
-  for (let i = 0; i < visibleItems.length - 1; i++) {
-    const start = visibleItems[i]
-    const end = visibleItems[i + 1]
-    
-    L.polyline(
-      [[start.lat, start.lng], [end.lat, end.lng]],
-      {
-        color: '#f97316',
-        weight: 3,
-        opacity: 0.6,
-        dashArray: '10, 10'
-      }
-    ).addTo(map!)
-  }
 }
 
 function focusOnDestination(item: typeof feedItems[0]) {
@@ -661,7 +633,6 @@ function initMap() {
       [89, 180],
     ],
     maxBoundsViscosity: 1.0,
-    noWrap: true,
     zoomControl: false,
     scrollWheelZoom: true,
     dragging: true,
@@ -752,7 +723,7 @@ function initMap() {
 }
 
 // Watch for map expansion to invalidate size
-let resizeTimeout: NodeJS.Timeout
+let resizeTimeout: ReturnType<typeof setTimeout>
 onMounted(() => {
   // Check if mobile
   checkIsMobile()
