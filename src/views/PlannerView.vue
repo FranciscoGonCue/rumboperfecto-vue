@@ -443,6 +443,7 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import type { CalendarOptions } from '@fullcalendar/core'
 
 // ========== INSTANCIA DEL STORE ==========
 // Acceso a la tienda global de datos (viajes y actividades)
@@ -551,7 +552,7 @@ const calendarEvents = computed(() => {
  * - Incluye plugins, idioma, eventos, manejadores, etc.
  * - Se recalcula cuando cambiam los eventos (via calendarEvents)
  */
-const calendarOptions = computed(() => ({
+const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
   height: 'auto',
@@ -583,7 +584,7 @@ const calendarOptions = computed(() => ({
     meridiem: 'short'
   },
   eventOrderStrict: true
-}))
+} as CalendarOptions))
 
 // ========== MANEJADORES DE EVENTOS DEL CALENDARIO ==========
 /**
@@ -626,7 +627,7 @@ function handleEventContent(info: any) {
  * handleEventClassNames(info):
  * - Añade clases CSS personalizadas a los eventos
  */
-function handleEventClassNames(info: any) {
+function handleEventClassNames(_info: any) {
   return ['fc-event-professional']
 }
 
@@ -639,7 +640,7 @@ function handleEventClassNames(info: any) {
  * - Cierra el modal
  * - Limpia el formulario
  */
-function handleAddTrip() {
+async function handleAddTrip() {
   const trip: Trip = {
     id: Date.now().toString(),  // ID único = timestamp actual
     title: newTrip.title,        // Título ingresado en el formulario
@@ -649,7 +650,11 @@ function handleAddTrip() {
   }
 
   // Añade el viaje a la tienda global
-  store.addTrip(trip)
+  try {
+    await store.addTrip(trip)
+  } catch {
+    return
+  }
   
   // Cierra el modal
   showAddTripModal.value = false
@@ -671,7 +676,7 @@ function handleAddTrip() {
  * - Limpia el formulario
  * - Refresca los datos del viaje seleccionado
  */
-function handleAddActivity() {
+async function handleAddActivity() {
   // Valida que hay un viaje seleccionado (seguridad)
   if (!selectedTrip.value) return
 
@@ -683,7 +688,11 @@ function handleAddActivity() {
   }
 
   // Añade la actividad al store: viaje y día específicos
-  store.addActivity(selectedTrip.value.id, selectedDay.value, activity)
+  try {
+    await store.addActivity(selectedTrip.value.id, selectedDay.value, activity)
+  } catch {
+    return
+  }
   
   // Cierra el modal
   showAddActivityModal.value = false
@@ -716,10 +725,10 @@ function selectTrip(trip: Trip) {
  * - Pide confirmación al usuario
  * - Si confirma, elimina el viaje del store
  */
-function deleteTrip(id: string) {
+async function deleteTrip(id: string) {
   // Muestra un diálogo de confirmación
   if (confirm('¿Estás seguro de que quieres eliminar este viaje?')) {
-    store.deleteTrip(id)  // Elimina el viaje del store
+    await store.deleteTrip(id)
   }
 }
 

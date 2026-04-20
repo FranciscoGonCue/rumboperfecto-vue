@@ -23,6 +23,47 @@ export interface User {
   isAuthenticated: boolean
 }
 
+export interface BackendUser {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+}
+
+export interface AuthResponse {
+  user: BackendUser
+  access: string
+  refresh: string
+}
+
+export interface LoginPayload {
+  email: string
+  password: string
+}
+
+export interface RegisterPayload {
+  email: string
+  password: string
+  name: string
+}
+
+export interface BackendActivity {
+  id: number
+  day: number
+  title: string
+  location: string
+  time: string
+}
+
+export interface BackendTrip {
+  id: number
+  title: string
+  start_date: string
+  end_date: string
+  activities: BackendActivity[]
+}
+
 export interface PaymentIntent {
   id: string
   amount: number

@@ -1,60 +1,81 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
 import { useAppStore } from '@/stores/app'
+
+function resolveErrorMessage(err: unknown, fallback: string): string {
+  const candidate = err as any
+
+  if (candidate?.response?.data?.detail && typeof candidate.response.data.detail === 'string') {
+    return candidate.response.data.detail
+  }
+
+  if (candidate?.response?.data && typeof candidate.response.data === 'object') {
+    const firstEntry = Object.values(candidate.response.data)[0]
+    if (Array.isArray(firstEntry) && typeof firstEntry[0] === 'string') {
+      return firstEntry[0]
+    }
+  }
+
+  if (candidate instanceof Error && candidate.message) {
+    return candidate.message
+  }
+
+  return fallback
+}
 
 export function useAuth() {
   const store = useAppStore()
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  async function login(email: string, password: string) {
+  const isAuthenticated = computed(() => store.isAuthenticated)
+
+  async function login(email: string, password: string): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
-      // Simulación de API call - reemplazar con tu backend real
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (email && password.length >= 6) {
-        store.login(email, password)
-        return true
-      } else {
-        error.value = 'Credenciales inválidas'
-        return false
+      const ok = await store.login(email, password)
+      if (!ok) {
+        error.value = store.networkError ?? 'Credenciales invalidas.'
       }
-    } catch (e) {
-      error.value = 'Error al iniciar sesión'
+      return ok
+    } catch (err: unknown) {
+      error.value = resolveErrorMessage(err, 'Error al iniciar sesion.')
       return false
     } finally {
       isLoading.value = false
     }
   }
 
-  async function register(email: string, password: string, name: string) {
+  async function register(email: string, password: string, name: string): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
-      // Simulación de API call - reemplazar con tu backend real
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (email && password.length >= 6 && name) {
-        store.user.name = name
-        store.login(email, password)
-        return true
-      } else {
-        error.value = 'Datos inválidos'
-        return false
+      const ok = await store.register(email, password, name)
+      if (!ok) {
+        error.value = store.networkError ?? 'No se pudo completar el registro.'
       }
-    } catch (e) {
-      error.value = 'Error al registrarse'
+      return ok
+    } catch (err: unknown) {
+      error.value = resolveErrorMessage(err, 'Error al registrarse.')
       return false
     } finally {
       isLoading.value = false
     }
   }
 
-  function logout() {
-    store.logout()
+  async function logout(): Promise<void> {
+    isLoading.value = true
+    error.value = null
+    try {
+      await store.logout()
+    } catch (err: unknown) {
+      error.value = resolveErrorMessage(err, 'Error al cerrar sesion.')
+    } finally {
+      isLoading.value = false
+    }
   }
 
   return {
@@ -63,6 +84,6 @@ export function useAuth() {
     login,
     register,
     logout,
-    isAuthenticated: () => store.isAuthenticated
+    isAuthenticated,
   }
 }

@@ -121,9 +121,8 @@ const currentViewComponent = computed(() => {
   return views[store.currentView] ?? HomeView
 })
 
-onMounted(() => {
-  store.loadTripsFromStorage()
-  store.loadUserFromStorage()
+onMounted(async () => {
+  await store.bootstrapSession()
 })
 </script>
 

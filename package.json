@@ -18,14 +18,12 @@
     "@fullcalendar/vue3": "^6.1.20",
     "@vueuse/core": "^10.7.0",
     "axios": "^1.13.6",
-    "leaflet": "^1.9.4",
     "chroma-js": "^3.2.0",
+    "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.330.0",
     "pinia": "^2.1.7",
-    "stripe": "^14.10.0",
     "three": "^0.125.0",
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5"
+    "vue": "^3.4.0"
   },
   "devDependencies": {
     "@types/chroma-js": "^3.1.2",
@@ -34,7 +32,7 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.5",
     "vite": "^5.0.0",
     "vue-tsc": "^1.8.27"
   }
