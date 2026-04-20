@@ -85,7 +85,7 @@
       >
         <div class="pb-32 lg:pb-12 pt-6 lg:pt-12 px-6 lg:px-12">
           <!-- Search Bar -->
-          <div class="relative mb-10 -mt-12 lg:mt-0 lg:max-w-xl">
+          <div class="relative mb-10 -mt-12 lg:mt-0 w-full">
             <div class="flex items-center bg-white lg:bg-gray-50 rounded-3xl px-6 py-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)] lg:shadow-none border border-gray-100 lg:border-transparent lg:focus-within:border-orange-200 transition-all">
               <Search :size="22" class="text-rumbo-orange mr-4" />
               <input
@@ -110,7 +110,7 @@
               v-for="(cat, idx) in categories"
               :key="idx"
               class="flex flex-col items-center justify-center space-y-3 p-6 rounded-[32px] transition-all shadow-sm border border-transparent hover:border-orange-100 hover:shadow-xl group"
-              :class="cat.color"
+              :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               @click="filterByCategory(cat.label)"
             >
               <div class="p-4 bg-white rounded-2xl shadow-sm group-hover:shadow-md transition-all">
@@ -140,6 +140,7 @@
                   v-for="item in filteredItems"
                   :key="item.id"
                   class="relative rounded-[40px] overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.06)] bg-white border border-gray-50 group cursor-pointer hover:-translate-y-2 transition-transform duration-300"
+                  @click="openAccommodationDetail(item.id)"
                 >
                   <div class="relative h-64 overflow-hidden">
                     <img
@@ -167,7 +168,10 @@
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Desde</span>
                         <span class="text-rumbo-orange font-black text-2xl tracking-tighter">{{ item.price }}</span>
                       </div>
-                      <button class="p-4 bg-gray-50 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all shadow-sm">
+                      <button
+                        class="p-4 bg-gray-50 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all shadow-sm"
+                        @click.stop="openAccommodationDetail(item.id)"
+                      >
                         <Compass :size="24" />
                       </button>
                     </div>
@@ -236,7 +240,7 @@
             >
               <div 
                 class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                :class="cat.color"
+                :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               >
                 <component :is="cat.icon" :size="20" />
               </div>
@@ -351,7 +355,7 @@
             >
               <div 
                 class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
-                :class="cat.color"
+                :class="selectedCategory === cat.label ? cat.activeColor : cat.color"
               >
                 <component :is="cat.icon" :size="18" />
               </div>
@@ -419,11 +423,28 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { accommodationsMock } from '@/mocks/accommodations'
+import { useAppStore } from '@/stores/app'
 
 const categories = [
-  { icon: Hotel, label: 'Hoteles', color: 'bg-blue-50 text-blue-500' },
-  { icon: Compass, label: 'Aventuras', color: 'bg-emerald-50 text-emerald-500' },
-  { icon: Utensils, label: 'Comida', color: 'bg-orange-50 text-rumbo-orange' }
+  {
+    icon: Hotel,
+    label: 'Alojamiento',
+    color: 'bg-blue-50 text-blue-500',
+    activeColor: 'bg-blue-200 text-blue-700'
+  },
+  {
+    icon: Compass,
+    label: 'Aventuras',
+    color: 'bg-emerald-50 text-emerald-500',
+    activeColor: 'bg-emerald-200 text-emerald-700'
+  },
+  {
+    icon: Utensils,
+    label: 'Comida',
+    color: 'bg-orange-50 text-rumbo-orange',
+    activeColor: 'bg-orange-200 text-orange-700'
+  }
 ]
 
 const mapViews = [
@@ -432,18 +453,21 @@ const mapViews = [
   { id: 'clusters', label: 'Agrupados', description: 'Por región', icon: Layers }
 ]
 
-const feedItems = [
-  { id: 1, title: 'Escapada a Bali', price: '$450', rating: 4.8, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80', lat: -8.3405, lng: 115.0920 },
-  { id: 2, title: 'Ruta Gastronómica', price: '$80', rating: 4.9, category: 'Comida', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80', lat: 41.3851, lng: 2.1734 },
-  { id: 3, title: 'Aventura en los Alpes', price: '$220', rating: 4.7, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80', lat: 46.5197, lng: 7.9738 },
-  { id: 4, title: 'Playa Secreta', price: '$150', rating: 4.5, category: 'Hoteles', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80', lat: 18.7883, lng: -98.9856 },
-  { id: 5, title: 'Safari en Kenya', price: '$890', rating: 5.0, category: 'Aventuras', img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=400&q=80', lat: -1.2921, lng: 36.8219 },
-  { id: 6, title: 'Luces de Tokyo', price: '$540', rating: 4.6, category: 'Hoteles', img: 'https://images.unsplash.com/photo-1540959733332-e94e270b4d82?auto=format&fit=crop&w=400&q=80', lat: 35.6762, lng: 139.6503 }
-]
+const feedItems = accommodationsMock.map((acc, index) => ({
+  id: acc.id,
+  title: acc.title,
+  price: `${acc.currency} ${acc.pricePerNight}`,
+  rating: acc.rating,
+  category: 'Alojamiento',
+  img: acc.image,
+  lat: 40.4168 + (index * 1.25),
+  lng: -3.7038 + (index * 1.25)
+}))
 
+const store = useAppStore()
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
-const favorites = ref<number[]>([])
+const favorites = ref<string[]>([])
 const mapExpanded = ref(false)
 const currentMapView = ref('world')
 const showMobileSidebar = ref(false)
@@ -537,13 +561,17 @@ function filterByCategory(category: string) {
   }
 }
 
-function toggleFavorite(id: number) {
+function toggleFavorite(id: string) {
   const index = favorites.value.indexOf(id)
   if (index > -1) {
     favorites.value.splice(index, 1)
   } else {
     favorites.value.push(id)
   }
+}
+
+function openAccommodationDetail(id: string) {
+  store.openAccommodationDetail(id)
 }
 
 function exitMapMode() {

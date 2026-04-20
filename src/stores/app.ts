@@ -209,6 +209,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     currentView,
+    selectedAccommodationId,
     theme,
     trips,
     user,
