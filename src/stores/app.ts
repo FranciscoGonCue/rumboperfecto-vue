@@ -19,6 +19,7 @@ export const useAppStore = defineStore('app', () => {
   const theme = ref<'light' | 'dark'>('light')
   const trips = ref<Trip[]>([])
   const user = ref<User>({ ...GUEST_USER })
+  const selectedAccommodationId = ref<string | null>(null)
 
   const bootstrapping = ref(false)
   const tripsLoading = ref(false)
@@ -31,6 +32,10 @@ export const useAppStore = defineStore('app', () => {
 
   function setCurrentView(view: 'inicio' | 'plan' | 'perfil'): void {
     currentView.value = view
+  }
+
+  function setSelectedAccommodationId(id: string | null): void {
+    selectedAccommodationId.value = id
   }
 
   function applyThemeToDom(nextTheme: 'light' | 'dark'): void {
@@ -221,6 +226,7 @@ export const useAppStore = defineStore('app', () => {
     isAuthenticated,
     isDark,
     setCurrentView,
+    setSelectedAccommodationId,
     setTheme,
     toggleTheme,
     loadThemeFromStorage,
