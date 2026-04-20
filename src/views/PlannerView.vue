@@ -555,15 +555,34 @@ const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
   height: 'auto',
+  contentHeight: 'auto',
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
-    right: 'dayGridMonth,timeGridWeek'
+    right: 'dayGridMonth,dayGridWeek'
   },
   events: calendarEvents.value,
   eventClick: handleEventClick,
   locale: 'es',
-  eventDisplay: 'block'
+  eventDisplay: 'block',
+  // ========== CONFIG ESPECÍFICA PARA WEEK ==========
+  firstDay: 1,
+  weekends: true,
+  allDaySlot: false,
+  buttonText: {
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana'
+  },
+  eventContent: handleEventContent,
+  eventClassNames: handleEventClassNames,
+  // ========== CONFIGURACIÓN VISUAL ==========
+  eventTimeFormat: {
+    hour: 'numeric',
+    minute: '2-digit',
+    meridiem: 'short'
+  },
+  eventOrderStrict: true
 }))
 
 // ========== MANEJADORES DE EVENTOS DEL CALENDARIO ==========
@@ -578,6 +597,37 @@ function handleEventClick(info: any) {
   if (trip) {
     selectTrip(trip)
   }
+}
+
+/**
+ * handleEventContent(info):
+ * - Renderiza el contenido personalizado de los eventos
+ * - Muestra título, hora y estilos profesionales
+ */
+function handleEventContent(info: any) {
+  const event = info.event
+  const startTime = event.start 
+    ? new Date(event.start).toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      }) 
+    : ''
+  
+  // Truncar título si es muy largo
+  const title = event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title
+  
+  return {
+    html: `<div class="fc-event-text"><div class="fc-event-time">${startTime}</div><div class="fc-event-title">${title}</div></div>`
+  }
+}
+
+/**
+ * handleEventClassNames(info):
+ * - Añade clases CSS personalizadas a los eventos
+ */
+function handleEventClassNames(info: any) {
+  return ['fc-event-professional']
 }
 
 // ========== FUNCIÓN: CREAR UN NUEVO VIAJE ==========
@@ -787,224 +837,416 @@ watch(() => store.trips, () => {
   }
 }
 
-/* ========== ESTILOS DE FULLCALENDAR ========== */
+/* ========== ESTILOS DE FULLCALENDAR - VISTA SEMANA/MES PROFESIONAL ========== */
 
 /* Contenedor general del calendario */
 :deep(.fc) {
   font-family: inherit;
   color: #1f2937;
+  background: #ffffff;
 }
 
-/* Encabezado del calendario (título, botones de navegación) */
+/* HEADER TOOLBAR */
 :deep(.fc-header-toolbar) {
-  background: linear-gradient(135deg, #fff5f0 0%, #faf5ff 100%);
-  padding: 2rem;
-  border-bottom: 2px solid #fbbf24;
+  background: linear-gradient(135deg, #fff5f0 0%, #ffffff 100%);
+  padding: 2.5rem 2rem;
+  border-bottom: 3px solid #ff6b35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 2rem;
   margin: 0;
 }
 
-/* Botones de navegación del calendario */
-:deep(.fc-button-primary) {
-  background-color: #ff6b35;
-  border-color: #ff6b35;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  border-radius: 0.75rem;
-  transition: all 0.3s ease;
-}
-
-:deep(.fc-button-primary:hover) {
-  background-color: #ff5722;
-  border-color: #ff5722;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-  transform: translateY(-2px);
-}
-
-:deep(.fc-button-primary.fc-button-active) {
-  background-color: #ff5722;
-  border-color: #ff5722;
-}
-
-/* Título del mes/año */
 :deep(.fc-toolbar-title) {
-  font-size: 1.75rem;
+  font-size: 2.5rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   color: #1f2937;
+  margin: 0;
 }
 
-/* Encabezados de días de la semana */
-:deep(.fc-col-header-cell) {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  color: #374151;
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  padding: 1.25rem 0.5rem;
-  letter-spacing: 0.1em;
-  border-color: #d1d5db;
-}
-
-/* Celdas del calendario */
-:deep(.fc-daycell) {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  padding: 0;
-  min-height: 130px;
-}
-
-:deep(.fc-daycell:hover) {
-  background-color: #f9fafb;
-}
-
-/* Frame de la celda (contenedor interno) */
-:deep(.fc-daycell-frame) {
-  padding: 0.75rem;
-  height: 100%;
-}
-
-/* Número del día */
-:deep(.fc-daycell-bg + .fc-daycell-frame) {
-  padding: 0.75rem;
-}
-
-/* Eventos en el calendario */
-:deep(.fc-event) {
-  border-radius: 0.75rem;
+/* Botones de navegación */
+:deep(.fc-button-primary) {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
   border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  margin: 0.5rem 0;
-  cursor: pointer;
+  border-radius: 12px;
+  color: white;
   font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-  background-clip: padding-box;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  padding: 0.85rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
-:deep(.fc-event:hover) {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+:deep(.fc-button-primary:hover) {
+  background: linear-gradient(135deg, #ff5722 0%, #ff4500 100%);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
   transform: translateY(-3px);
 }
 
-/* Contenedor del evento */
-:deep(.fc-event-main) {
-  padding: 0.5rem 0.75rem;
+:deep(.fc-button-primary.fc-button-active) {
+  background: linear-gradient(135deg, #ff5722 0%, #ff4500 100%);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
 }
 
-/* Título del evento */
+:deep(.fc-button-primary:focus) {
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+}
+
+/* ENCABEZADOS DE COLUMNAS (DÍAS) */
+:deep(.fc-col-header-cell) {
+  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+  border-color: #e5e7eb;
+  border-width: 1px;
+  padding: 1.5rem 0.75rem;
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  color: #374151;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+:deep(.fc-col-header-cell:hover) {
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+/* Resaltar hoy en encabezado */
+:deep(.fc-col-header-cell.fc-day-today) {
+  background: linear-gradient(180deg, #fff5f0 0%, #ffe8dd 100%);
+  border-color: #ff6b35 !important;
+  border-width: 2px !important;
+  color: #ff6b35;
+  font-weight: 900;
+  box-shadow: inset 0 -3px 0 #ff6b35;
+}
+
+/* CONTENEDOR DE DÍAS - DAYGRID */
+:deep(.fc-daycell) {
+  border-color: #e5e7eb;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 180px;
+}
+
+:deep(.fc-daycell:hover) {
+  background: #fafafa;
+  border-color: #ff6b35;
+}
+
+:deep(.fc-daycell.fc-day-today) {
+  background-color: #fffbeb !important;
+  border-color: #ff6b35 !important;
+  border-width: 2px !important;
+  box-shadow: inset 0 -3px 0 #ff6b35;
+}
+
+/* Número del día */
+:deep(.fc-daycell-number) {
+  padding: 0.75rem;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #1f2937;
+}
+
+:deep(.fc-daycell-number.fc-day-today) {
+  color: #ff6b35;
+}
+
+/* Frame de la celda */
+:deep(.fc-daycell-frame) {
+  padding: 1rem 0.75rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* EVENTOS - ESTILOS GENERALES */
+:deep(.fc-event) {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-clip: padding-box;
+  position: relative;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  font-weight: 700;
+}
+
+:deep(.fc-event::before) {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+:deep(.fc-event:hover) {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px) scale(1.02);
+  z-index: 10;
+}
+
+:deep(.fc-event:active) {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Contenido del evento */
+:deep(.fc-event-main) {
+  padding: 0.6rem 0.75rem;
+  background: inherit;
+}
+
 :deep(.fc-event-title) {
   font-weight: 800;
-  white-space: normal;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: #ffffff;
   word-wrap: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.02em;
+  white-space: normal;
+}
+
+/* TIME LABEL EN EVENTOS */
+:deep(.fc-event-time) {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
-  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
 }
 
-/* Borde izquierdo del evento */
-:deep(.fc-event-main::before) {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 100%;
-  margin-right: 0.5rem;
-  border-radius: 2px;
+/* FIN DE SEMANA */
+:deep(.fc-day-sat),
+:deep(.fc-day-sun) {
+  background: linear-gradient(180deg, rgba(255, 107, 53, 0.02) 0%, rgba(255, 107, 53, 0.01) 100%);
 }
 
-/* Día actual (hoy) */
-:deep(.fc-day-today) {
-  background-color: #fffbeb !important;
-  border: 2px solid #ff6b35 !important;
+:deep(.fc-day-sat .fc-daycell-number),
+:deep(.fc-day-sun .fc-daycell-number) {
+  color: #ff6b35;
+  font-weight: 900;
 }
 
-/* Número de día para hoy */
-:deep(.fc-day-today .fc-daycell-frame) {
-  background-color: transparent;
-}
-
-/* Fin de semana */
-:deep(.fc-day-sun),
-:deep(.fc-day-sat) {
-  background-color: #fafafa;
-}
-
-/* Columna de otros meses */
+/* OTROS MESES */
 :deep(.fc-day-other) {
-  opacity: 0.6;
+  opacity: 0.5;
+  background: #f9f9f9;
+}
+
+:deep(.fc-day-other .fc-daycell-number) {
+  color: #d1d5db;
+}
+
+/* ========== VISTA SEMANAL (DAY GRID WEEK) ========== */
+
+:deep(.fc-daygrid-day-events) {
+  margin-top: 0.5rem;
+}
+
+:deep(.fc-daygrid-day-frame) {
+  min-height: 200px;
+}
+
+/* ========== CONTENIDO PERSONALIZADO DE EVENTOS ========== */
+
+:deep(.fc-event-text) {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+:deep(.fc-event-professional) {
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+}
+
+:deep(.fc-event-professional:hover) {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-4px) scale(1.02) !important;
+}
+
+/* ========== ANIMACIONES SUAVES ========== */
+
+:deep(.fc-event),
+:deep(.fc-button-primary),
+:deep(.fc-col-header-cell) {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.fc-daycell) {
+  transition: all 0.2s ease;
 }
 
 /* ========== RESPONSIVE ========== */
+
+@media (max-width: 1200px) {
+  :deep(.fc-header-toolbar) {
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+
+  :deep(.fc-toolbar-title) {
+    font-size: 2rem;
+  }
+
+  :deep(.fc-button-primary) {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.8rem;
+  }
+
+  :deep(.fc-col-header-cell) {
+    padding: 1.25rem 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  :deep(.fc-daycell) {
+    min-height: 160px;
+  }
+}
+
 @media (max-width: 1024px) {
   :deep(.fc-toolbar-title) {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 
   :deep(.fc-header-toolbar) {
     padding: 1.5rem;
+    gap: 1rem;
   }
 
   :deep(.fc-col-header-cell) {
-    font-size: 0.75rem;
-    padding: 1rem 0.25rem;
+    font-size: 0.9rem;
+    padding: 1rem 0.4rem;
   }
 
   :deep(.fc-daycell) {
-    min-height: 110px;
-  }
-
-  :deep(.fc-daycell-frame) {
-    padding: 0.5rem;
+    min-height: 140px;
   }
 
   :deep(.fc-event-title) {
     font-size: 0.85rem;
   }
+
+  :deep(.fc-event-main) {
+    padding: 0.55rem;
+  }
+
+  :deep(.fc-daycell-number) {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
   :deep(.fc-toolbar-title) {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
   }
 
   :deep(.fc-header-toolbar) {
-    padding: 1.25rem;
-    gap: 1rem;
+    padding: 1.2rem;
+    gap: 0.8rem;
+    flex-direction: column;
   }
 
   :deep(.fc-col-header-cell) {
-    font-size: 0.65rem;
+    font-size: 0.8rem;
     padding: 0.75rem 0.2rem;
   }
 
   :deep(.fc-daycell) {
-    min-height: 90px;
+    min-height: 120px;
   }
 
   :deep(.fc-daycell-frame) {
-    padding: 0.4rem;
+    padding: 0.75rem 0.5rem;
   }
 
   :deep(.fc-event-title) {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
-  :deep(.fc-header-toolbar) {
-    flex-direction: column;
-    gap: 0.75rem;
+  :deep(.fc-event-main) {
+    padding: 0.45rem;
+  }
+
+  :deep(.fc-daycell-number) {
+    font-size: 0.95rem;
+    padding: 0.5rem;
   }
 
   :deep(.fc-button-primary) {
     padding: 0.6rem 1rem;
     font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.fc-toolbar-title) {
+    font-size: 1.1rem;
+  }
+
+  :deep(.fc-header-toolbar) {
+    padding: 0.9rem;
+    gap: 0.5rem;
+  }
+
+  :deep(.fc-col-header-cell) {
+    font-size: 0.65rem;
+    padding: 0.5rem 0.1rem;
+    min-height: auto;
+  }
+
+  :deep(.fc-daycell) {
+    min-height: 100px;
+  }
+
+  :deep(.fc-daycell-frame) {
+    padding: 0.5rem 0.35rem;
+  }
+
+  :deep(.fc-event-title) {
+    font-size: 0.65rem;
+  }
+
+  :deep(.fc-event-main) {
+    padding: 0.35rem;
+  }
+
+  :deep(.fc-daycell-number) {
+    font-size: 0.85rem;
+    padding: 0.4rem;
+  }
+
+  :deep(.fc-button-primary) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.65rem;
+  }
+
+  :deep(.fc-event) {
+    margin: 0.35rem 0;
+    padding: 0.5rem;
   }
 }
 </style>

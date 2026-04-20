@@ -1,12 +1,12 @@
 <template>
   <button
     class="flex flex-col items-center justify-center space-y-1 w-20 h-full transition-all relative"
-    :class="props.isActive ? 'text-rumbo-orange' : 'text-gray-400'"
+    :class="props.isActive ? 'text-rumbo-orange' : props.dark ? 'text-slate-400' : 'text-gray-400'"
     @click="emit('click')"
   >
     <div
       class="p-2 rounded-xl transition-all"
-      :class="props.isActive ? 'bg-orange-50' : ''"
+      :class="props.isActive ? (props.dark ? 'bg-slate-800' : 'bg-orange-50') : ''"
     >
       <component
         :is="props.icon"
@@ -34,6 +34,7 @@ import type { Component } from 'vue'
 
 interface Props {
   isActive: boolean
+  dark?: boolean
   icon: Component
   label: string
 }

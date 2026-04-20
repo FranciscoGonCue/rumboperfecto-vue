@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import type { Trip, User, Activity } from '@/types'
 
 export const useAppStore = defineStore('app', () => {
+  const THEME_STORAGE_KEY = 'rumbo_theme'
+
   // State
   const currentView = ref<'inicio' | 'plan' | 'perfil'>('inicio')
   const theme = ref<'light' | 'dark'>('light')
@@ -25,16 +27,28 @@ export const useAppStore = defineStore('app', () => {
     currentView.value = view
   }
 
+  function applyThemeToDom(nextTheme: 'light' | 'dark') {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    root.classList.toggle('theme-dark', nextTheme === 'dark')
+    root.style.colorScheme = nextTheme
+  }
+
+  function setTheme(nextTheme: 'light' | 'dark') {
+    theme.value = nextTheme
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+    applyThemeToDom(nextTheme)
+  }
+
   function toggleTheme() {
-    theme.value = theme.value === 'dark' ? 'light' : 'dark'
-    localStorage.setItem('rumbo_theme', theme.value)
+    setTheme(theme.value === 'dark' ? 'light' : 'dark')
   }
 
   function loadThemeFromStorage() {
-    const saved = localStorage.getItem('rumbo_theme') as 'light' | 'dark' | null
-    if (saved) {
-      theme.value = saved
-    }
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) as 'light' | 'dark' | null
+    const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const nextTheme = saved ?? (prefersDark ? 'dark' : 'light')
+    setTheme(nextTheme)
   }
 
   function loadTripsFromStorage() {
@@ -108,6 +122,7 @@ export const useAppStore = defineStore('app', () => {
     isDark,
     // Actions
     setCurrentView,
+    setTheme,
     toggleTheme,
     loadThemeFromStorage,
     loadTripsFromStorage,
