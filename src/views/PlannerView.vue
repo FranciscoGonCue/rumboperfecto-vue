@@ -1,26 +1,31 @@
-<template><!-- Contenedor principal con padding adaptativo (6 en móvil, 12 en desktop) y altura mínima completa -->
-  <!-- Contenedor principal con padding adaptativo (6 en móvil, 12 en desktop) y altura mínima completa -->
-  <div class="p-6 lg:p-12 min-h-full">
-    <!-- Contenedor centrado con máximo ancho para mantener legibilidad -->
+<template>
+  <div class="p-6 lg:p-12 min-h-full transition-colors"
+       :class="store.isDark ? 'bg-rp-bg' : ''">
     <div class="max-w-6xl mx-auto">
-      <!-- ========== HEADER / ENCABEZADO ========== -->
-      <!-- Barra superior: título a la izquierda, botones a la derecha -->
-      <div class="flex items-center justify-between mb-12">
+      <!-- HEADER -->
+      <div class="flex items-center justify-between mb-10">
         <div>
-          <!-- Título "Mis Viajes" en grande, negrita, mayúsculas -->
-          <h2 class="text-4xl font-black text-gray-800 uppercase tracking-tighter leading-none">
+          <h2 class="text-4xl font-black uppercase tracking-tighter leading-none"
+              :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
+              style="font-family: 'Syne', sans-serif;">
             Mis Viajes
           </h2>
-          <!-- Línea decorativa naranja debajo del título -->
-          <div class="h-1.5 w-16 bg-orange-500 rounded-full mt-3" />
+          <div class="h-1 w-12 bg-rp-accent rounded-full mt-3" />
         </div>
-        <!-- Contenedor de botones a la derecha -->
-        <div class="flex items-center space-x-4">
-          <!-- Toggle de vistas (Tarjetas/Calendario) -->
-          <div class="flex bg-gray-100 rounded-2xl p-1 shadow-md">
+
+        <div class="flex items-center space-x-3">
+          <!-- View toggle -->
+          <div class="flex rounded-2xl p-1"
+               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-gray-100 shadow-md'">
             <button
-              class="px-4 py-3 rounded-xl font-bold uppercase tracking-wider transition-all duration-200"
-              :class="viewMode === 'cards' ? 'bg-white shadow-md text-rumbo-orange' : 'text-gray-500 hover:text-gray-700'"
+              class="px-4 py-2.5 rounded-xl font-bold uppercase tracking-wider transition-all duration-200 text-sm"
+              :class="viewMode === 'cards'
+                ? store.isDark
+                  ? 'bg-rp-surface-2 text-rp-accent shadow-sm border border-rp-border'
+                  : 'bg-white shadow-md text-rumbo-orange'
+                : store.isDark
+                  ? 'text-rp-muted hover:text-rp-text'
+                  : 'text-gray-500 hover:text-gray-700'"
               @click="viewMode = 'cards'"
               title="Vista de tarjetas"
             >
@@ -28,8 +33,14 @@
               <span class="sm:hidden">📇</span>
             </button>
             <button
-              class="px-4 py-3 rounded-xl font-bold uppercase tracking-wider transition-all duration-200"
-              :class="viewMode === 'calendar' ? 'bg-white shadow-md text-rumbo-orange' : 'text-gray-500 hover:text-gray-700'"
+              class="px-4 py-2.5 rounded-xl font-bold uppercase tracking-wider transition-all duration-200 text-sm"
+              :class="viewMode === 'calendar'
+                ? store.isDark
+                  ? 'bg-rp-surface-2 text-rp-accent shadow-sm border border-rp-border'
+                  : 'bg-white shadow-md text-rumbo-orange'
+                : store.isDark
+                  ? 'text-rp-muted hover:text-rp-text'
+                  : 'text-gray-500 hover:text-gray-700'"
               @click="viewMode = 'calendar'"
               title="Vista de calendario"
             >
@@ -38,88 +49,99 @@
             </button>
           </div>
 
-          <!-- Botón "Nuevo Viaje": abre modal para crear un viaje -->
+          <!-- New trip button -->
           <button
-            class="flex items-center space-x-2 bg-gradient-to-r from-rumbo-orange to-orange-600 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-200 hover:shadow-orange-300 hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+            class="flex items-center space-x-2 px-5 py-3.5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+            :class="store.isDark
+              ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500 hover:shadow-orange-900/60'
+              : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200 hover:shadow-orange-300'"
             @click="showAddTripModal = true"
             title="Crear un nuevo viaje"
           >
-            <Plus :size="20" />
-            <!-- El texto solo se muestra en pantallas pequeñas (@click abre el modal) -->
-            <span class="hidden sm:inline">Nuevo Viaje</span>
+            <Plus :size="18" />
+            <span class="hidden sm:inline text-sm">Nuevo Viaje</span>
           </button>
         </div>
       </div>
 
-      <!-- ========== EMPTY STATE (sin viajes) ========== -->
-      <!-- Se muestra SOLO si la lista de viajes está vacía -->
+      <!-- EMPTY STATE -->
       <div v-if="store.trips.length === 0" class="text-center py-20">
-        <!-- Icono grande de avión con fondo naranja claro -->
-        <div class="w-32 h-32 bg-orange-50 rounded-full mx-auto mb-6 flex items-center justify-center">
-          <Plane :size="64" class="text-rumbo-orange" />
+        <div class="w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center"
+             :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-orange-50'">
+          <Plane :size="56" class="text-rp-accent" />
         </div>
-        <!-- Texto motivacional -->
-        <h3 class="text-2xl font-black text-gray-800 mb-4">¡Comienza tu aventura!</h3>
-        <p class="text-gray-500 mb-8">Aún no has creado ningún viaje. Crea tu primer itinerario ahora.</p>
-        <!-- Botón para crear el primer viaje -->
+        <h3 class="text-2xl font-black mb-3"
+            :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
+            style="font-family: 'Syne', sans-serif;">¡Comienza tu aventura!</h3>
+        <p class="mb-8 text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+          Aún no has creado ningún viaje. Crea tu primer itinerario ahora.
+        </p>
         <button
-          class="bg-gradient-to-r from-rumbo-orange to-orange-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-200 hover:shadow-orange-300 hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+          class="px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+          :class="store.isDark
+            ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500'
+            : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200'"
           @click="showAddTripModal = true"
         >
           Crear Mi Primer Viaje
         </button>
       </div>
 
-      <!-- ========== CONTENIDO PRINCIPAL (TARJETAS O CALENDARIO) ========== -->
-      <!-- Se muestra si hay al menos 1 viaje (v-else del Empty State) -->
+      <!-- TRIPS CONTENT -->
       <div v-else>
-        <!-- MODO TARJETAS: Grid de viajes -->
-        <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- v-for itera sobre todos los viajes del store -->
+        <!-- CARDS MODE -->
+        <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div
             v-for="trip in store.trips"
             :key="trip.id"
-            class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:scale-[1.02]"
+            class="rounded-2xl overflow-hidden group cursor-pointer transform hover:scale-[1.02] transition-all duration-300"
+            :class="store.isDark
+              ? 'bg-rp-surface border border-rp-border hover:border-rp-accent/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
+              : 'bg-white shadow-lg hover:shadow-2xl'"
             @click="selectTrip(trip)"
           >
-            <!-- Encabezado de la tarjeta con color del viaje -->
+            <!-- Color bar -->
             <div
-              class="h-3 bg-gradient-to-r from-rumbo-orange to-orange-600"
-              :style="{ backgroundColor: getTripColor(trip.id) }"
+              class="h-1 w-full"
+              :style="{ background: getTripColor(trip.id) }"
             />
 
-            <!-- Contenido de la tarjeta -->
             <div class="p-6">
-              <!-- Título del viaje -->
-              <h3 class="text-xl font-black uppercase tracking-tight mb-3 text-gray-800 group-hover:text-rumbo-orange transition-colors">
+              <h3 class="text-lg font-black uppercase tracking-tight mb-3 transition-colors"
+                  :class="store.isDark
+                    ? 'text-rp-text group-hover:text-rp-accent'
+                    : 'text-gray-800 group-hover:text-rumbo-orange'">
                 {{ trip.title }}
               </h3>
 
-              <!-- Información de fechas -->
-              <div class="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-                <Calendar :size="18" class="text-rumbo-orange" />
+              <div class="flex items-center space-x-2 text-sm mb-4"
+                   :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                <Calendar :size="16" class="text-rp-accent" />
                 <span class="font-semibold">
                   {{ formatDate(trip.startDate) }} - {{ formatDate(trip.endDate) }}
                 </span>
               </div>
 
-              <!-- Stats: Días y Actividades -->
-              <div class="grid grid-cols-2 gap-4 mb-6">
-                <!-- Contador de días -->
-                <div class="bg-orange-50 rounded-xl p-3 text-center">
-                  <p class="text-2xl font-black text-rumbo-orange">{{ getDaysCount(trip) }}</p>
-                  <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">días</p>
+              <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="rounded-xl p-3 text-center"
+                     :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-orange-50'">
+                  <p class="text-xl font-black text-rp-accent">{{ getDaysCount(trip) }}</p>
+                  <p class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
+                     :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">días</p>
                 </div>
-                <!-- Contador de actividades -->
-                <div class="bg-blue-50 rounded-xl p-3 text-center">
-                  <p class="text-2xl font-black text-blue-600">{{ getActivitiesCount(trip) }}</p>
-                  <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">actividades</p>
+                <div class="rounded-xl p-3 text-center"
+                     :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-blue-50'">
+                  <p class="text-xl font-black text-blue-400">{{ getActivitiesCount(trip) }}</p>
+                  <p class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
+                     :class="store.isDark ? 'text-rp-muted' : 'text-blue-600'">actividades</p>
                 </div>
               </div>
 
-              <!-- Botón para ver detalles -->
               <button
-                class="w-full py-3 bg-gradient-to-r from-rumbo-orange to-orange-600 text-white rounded-xl font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.05]"
+                class="w-full py-2.5 rounded-xl font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.05] text-sm"
+                :class="store.isDark
+                  ? 'bg-rp-accent text-white hover:bg-orange-500 shadow-orange-900/30'
+                  : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white'"
                 @click.stop="selectTrip(trip)"
               >
                 Ver Detalles
@@ -128,82 +150,87 @@
           </div>
         </div>
 
-        <!-- MODO CALENDARIO: FullCalendar -->
-        <div v-else class="bg-white rounded-3xl shadow-lg overflow-hidden">
+        <!-- CALENDAR MODE -->
+        <div v-else class="rounded-3xl overflow-hidden shadow-lg"
+             :class="store.isDark
+               ? 'bg-rp-surface border border-rp-border shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+               : 'bg-white'">
           <FullCalendar :options="calendarOptions" />
         </div>
       </div>
     </div>
 
-    <!-- ========== MODAL: AGREGAR NUEVO VIAJE ========== -->
-    <!-- Teleport: renderiza el modal fuera del árbol Vue (directamente en body) -->
-    <!-- Transition: anima entrada y salida del modal -->
+    <!-- MODAL: ADD TRIP -->
     <Teleport to="body">
       <Transition name="modal">
-        <!-- Se muestra solo cuando showAddTripModal es true -->
         <div
           v-if="showAddTripModal"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
           @click.self="showAddTripModal = false"
         >
-          <!-- Fondo oscuro semitransparente que cierra el modal al hacer click -->
-          <div class="bg-white rounded-[40px] p-8 max-w-md w-full shadow-2xl transform transition-all">
-            <!-- Encabezado del modal con título y botón cerrar -->
-            <div class="flex items-center justify-between mb-8 pb-6 border-b-2 border-gray-100">
+          <div class="rounded-[36px] p-8 max-w-md w-full shadow-2xl transform transition-all"
+               :class="store.isDark
+                 ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
+                 : 'bg-white'">
+            <div class="flex items-center justify-between mb-8 pb-6"
+                 :class="store.isDark ? 'border-b border-rp-border' : 'border-b-2 border-gray-100'">
               <div class="flex items-center space-x-3">
-                <div class="p-3 bg-gradient-to-br from-rumbo-orange to-orange-600 rounded-xl">
-                  <Plane :size="28" class="text-white" />
+                <div class="p-3 rounded-xl bg-rp-accent">
+                  <Plane :size="24" class="text-white" />
                 </div>
-                <h3 class="text-2xl font-black uppercase tracking-tight">Nuevo Viaje</h3>
+                <h3 class="text-xl font-black uppercase tracking-tight"
+                    :class="store.isDark ? 'text-rp-text' : ''"
+                    style="font-family: 'Syne', sans-serif;">Nuevo Viaje</h3>
               </div>
-              <!-- Botón X para cerrar el modal -->
               <button
-                class="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 transform hover:scale-110"
+                class="p-2.5 rounded-full transition-all duration-200 transform hover:scale-110"
+                :class="store.isDark
+                  ? 'bg-rp-surface-2 hover:bg-rp-surface text-rp-muted border border-rp-border'
+                  : 'bg-gray-100 hover:bg-gray-200'"
                 @click="showAddTripModal = false"
                 title="Cerrar"
               >
-                <X :size="20" />
+                <X :size="18" />
               </button>
             </div>
 
-            <!-- FORMULARIO para crear un nuevo viaje -->
-            <!-- @submit.prevent previene recarga de página y ejecuta handleAddTrip -->
-            <form @submit.prevent="handleAddTrip" class="space-y-6">
-              <!-- Campo Título del viaje -->
-              <!-- v-model vincula bidireccional con newTrip.title -->
+            <form @submit.prevent="handleAddTrip" class="space-y-5">
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                   Título del viaje
                 </label>
                 <input
                   v-model="newTrip.title"
                   type="text"
                   required
-                  class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                  :class="store.isDark
+                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text placeholder:text-rp-muted focus:border-rp-accent/50'
+                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm focus:shadow-md'"
                   placeholder="Ej: Aventura en Tailandia"
                 />
               </div>
 
-              <!-- Campos de fechas en 2 columnas -->
               <div class="grid grid-cols-2 gap-4">
-                <!-- Fecha de inicio -->
-                <!-- v-model vincula con newTrip.startDate -->
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                  <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                         :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                     Fecha inicio
                   </label>
                   <input
                     v-model="newTrip.startDate"
                     type="date"
                     required
-                    class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                    class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                    :class="store.isDark
+                      ? 'bg-rp-surface-2 border border-rp-border text-rp-text focus:border-rp-accent/50'
+                      : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
                   />
                 </div>
-
-                <!-- Fecha de fin -->
-                <!-- v-model vincula con newTrip.endDate -->
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                  <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                         :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                     Fecha fin
                   </label>
                   <input
@@ -211,15 +238,20 @@
                     type="date"
                     required
                     :min="newTrip.startDate"
-                    class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                    class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                    :class="store.isDark
+                      ? 'bg-rp-surface-2 border border-rp-border text-rp-text focus:border-rp-accent/50'
+                      : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
                   />
                 </div>
               </div>
 
-              <!-- Botón submit: envía el formulario y crea el viaje -->
               <button
                 type="submit"
-                class="w-full bg-gradient-to-r from-rumbo-orange to-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-200 hover:shadow-orange-300 hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+                class="w-full py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+                :class="store.isDark
+                  ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500'
+                  : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200'"
               >
                 Crear Viaje
               </button>
@@ -229,102 +261,106 @@
       </Transition>
     </Teleport>
 
-    <!-- ========== MODAL: DETALLE DE VIAJE ========== -->
-    <!-- Se abre al hacer click en una tarjeta de viaje -->
+    <!-- MODAL: TRIP DETAIL -->
     <Teleport to="body">
       <Transition name="modal">
-        <!-- Se muestra solo cuando selectedTrip tiene un valor -->
         <div
           v-if="selectedTrip"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
           @click.self="selectedTrip = null"
         >
-          <!-- Contenedor del modal con información del viaje seleccionado -->
-          <div class="bg-white rounded-[40px] p-8 max-w-4xl w-full shadow-2xl transform transition-all my-8">
-            <!-- Encabezado con título del viaje y fecha -->
-            <div class="flex items-center justify-between mb-8">
+          <div class="rounded-[36px] p-8 max-w-4xl w-full shadow-2xl transform transition-all my-8"
+               :class="store.isDark
+                 ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
+                 : 'bg-white'">
+            <div class="flex items-center justify-between mb-7">
               <div>
-                <!-- Nombre del viaje en grande -->
-                <h3 class="text-3xl font-black uppercase tracking-tight">{{ selectedTrip.title }}</h3>
-                <!-- Fechas del viaje -->
-                <p class="text-gray-500 mt-2">
+                <h3 class="text-2xl font-black uppercase tracking-tight"
+                    :class="store.isDark ? 'text-rp-text' : ''"
+                    style="font-family: 'Syne', sans-serif;">{{ selectedTrip.title }}</h3>
+                <p class="mt-1.5 text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                   {{ formatDate(selectedTrip.startDate) }} - {{ formatDate(selectedTrip.endDate) }}
                 </p>
               </div>
-              <!-- Botones de acción: Eliminar y Cerrar -->
-              <div class="flex items-center space-x-3">
-                <!-- Botón eliminar viaje con estilos mejorados -->
+              <div class="flex items-center space-x-2">
                 <button
-                  class="p-3 bg-red-50 hover:bg-red-100 rounded-full transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-110"
+                  class="p-2.5 rounded-full transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-110"
+                  :class="store.isDark
+                    ? 'bg-red-950/40 hover:bg-red-950/70 border border-red-800/30'
+                    : 'bg-red-50 hover:bg-red-100'"
                   @click.stop="deleteTrip(selectedTrip.id); selectedTrip = null"
                   title="Eliminar viaje"
                 >
-                  <Trash2 :size="20" class="text-red-400 group-hover:text-red-600 transition-colors duration-200" />
+                  <Trash2 :size="18" class="text-red-400 group-hover:text-red-500 transition-colors" />
                 </button>
-                <!-- Botón cerrar modal -->
                 <button
-                  class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-110"
+                  class="p-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-110"
+                  :class="store.isDark
+                    ? 'bg-rp-surface-2 hover:bg-rp-surface border border-rp-border text-rp-muted'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-400'"
                   @click="selectedTrip = null"
                   title="Cerrar"
                 >
-                  <X :size="20" class="text-gray-400 hover:text-gray-600 transition-colors duration-200" />
+                  <X :size="18" />
                 </button>
               </div>
             </div>
 
-            <!-- ========== TABS DE DÍAS ========== -->
-            <!-- Muestra un botón para cada día del viaje -->
-            <!-- Cada botón cambia selectedDay al hacer click -->
-            <div class="flex overflow-x-auto space-x-2 mb-8 pb-4 border-b border-gray-200">
-              <!-- v-for itera desde 1 hasta el número de días del viaje -->
+            <!-- Day tabs -->
+            <div class="flex overflow-x-auto space-x-2 mb-7 pb-3"
+                 :class="store.isDark ? 'border-b border-rp-border' : 'border-b border-gray-200'">
               <button
                 v-for="day in getDaysCount(selectedTrip)"
                 :key="day"
-                class="px-6 py-3 rounded-xl font-bold whitespace-nowrap transition-all"
+                class="px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all text-sm"
                 :class="selectedDay === day
-                  ? 'bg-rumbo-orange text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  ? 'bg-rp-accent text-white shadow-lg shadow-orange-900/30'
+                  : store.isDark
+                    ? 'bg-rp-surface-2 border border-rp-border text-rp-muted hover:text-rp-text'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 @click="selectedDay = day"
               >
                 Día {{ day }}
               </button>
             </div>
 
-            <!-- ========== ACTIVIDADES DEL DÍA SELECCIONADO ========== -->
-            <!-- Contenedor de actividades y botón para agregar -->
-            <div class="space-y-4 mb-8">
-              <!-- v-for itera sobre las actividades del día seleccionado -->
-              <!-- getActivitiesForDay retorna un array vacío si no hay actividades -->
+            <!-- Activities -->
+            <div class="space-y-3 mb-7">
               <div
                 v-for="activity in getActivitiesForDay(selectedTrip, selectedDay)"
                 :key="activity.id"
-                class="flex items-start space-x-4 p-4 bg-orange-50 rounded-2xl"
+                class="flex items-start space-x-4 p-4 rounded-2xl transition-colors"
+                :class="store.isDark
+                  ? 'bg-orange-950/15 border border-orange-900/25'
+                  : 'bg-orange-50'"
               >
-                <!-- Icono de reloj en un cuadrado blanco -->
-                <div class="flex-shrink-0 w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                  <Clock :size="24" class="text-rumbo-orange" />
+                <div class="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center shadow-sm"
+                     :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-white'">
+                  <Clock :size="22" class="text-rp-accent" />
                 </div>
-                <!-- Información de la actividad -->
                 <div class="flex-1">
-                  <!-- Título de la actividad y hora a la derecha -->
                   <div class="flex items-center justify-between mb-1">
-                    <h4 class="font-bold text-gray-800">{{ activity.title }}</h4>
-                    <span class="text-sm font-bold text-rumbo-orange">{{ activity.time }}</span>
+                    <h4 class="font-bold" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+                      {{ activity.title }}
+                    </h4>
+                    <span class="text-sm font-bold text-rp-accent">{{ activity.time }}</span>
                   </div>
-                  <!-- Ubicación con icono de pin -->
-                  <p class="text-sm text-gray-600 flex items-center">
-                    <MapPin :size="14" class="mr-1" />
+                  <p class="text-sm flex items-center" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                    <MapPin :size="13" class="mr-1" />
                     {{ activity.location }}
                   </p>
                 </div>
               </div>
 
-              <!-- Botón para agregar nueva actividad al día seleccionado -->
+              <!-- Add activity button -->
               <button
-                class="w-full p-4 border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 hover:border-rumbo-orange hover:text-rumbo-orange transition-all duration-200 flex items-center justify-center space-x-2 hover:bg-orange-50 font-bold"
+                class="w-full p-4 border-2 border-dashed rounded-2xl font-bold flex items-center justify-center space-x-2 transition-all duration-200"
+                :class="store.isDark
+                  ? 'border-rp-border text-rp-muted hover:border-rp-accent/40 hover:text-rp-accent hover:bg-orange-950/10'
+                  : 'border-gray-300 text-gray-500 hover:border-rumbo-orange hover:text-rumbo-orange hover:bg-orange-50'"
                 @click="showAddActivityModal = true"
               >
-                <Plus :size="20" />
+                <Plus :size="18" />
                 <span>Agregar Actividad</span>
               </button>
             </div>
@@ -333,82 +369,97 @@
       </Transition>
     </Teleport>
 
-    <!-- ========== MODAL: AGREGAR ACTIVIDAD ========== -->
-    <!-- Se muestra solo cuando showAddActivityModal es true Y hay un viaje seleccionado -->
+    <!-- MODAL: ADD ACTIVITY -->
     <Teleport to="body">
       <Transition name="modal">
         <div
           v-if="showAddActivityModal && selectedTrip"
-          class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
           @click.self="showAddActivityModal = false"
         >
-          <!-- z-[60] aparece encima del modal anterior (z-50) -->
-          <div class="bg-white rounded-[40px] p-8 max-w-md w-full shadow-2xl transform transition-all">
-            <!-- Encabezado con título y botón cerrar -->
-            <div class="flex items-center justify-between mb-8 pb-6 border-b-2 border-gray-100">
+          <div class="rounded-[36px] p-8 max-w-md w-full shadow-2xl transform transition-all"
+               :class="store.isDark
+                 ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
+                 : 'bg-white'">
+            <div class="flex items-center justify-between mb-8 pb-6"
+                 :class="store.isDark ? 'border-b border-rp-border' : 'border-b-2 border-gray-100'">
               <div class="flex items-center space-x-3">
-                <div class="p-3 bg-gradient-to-br from-rumbo-orange to-orange-600 rounded-xl">
-                  <Activity :size="28" class="text-white" />
+                <div class="p-3 rounded-xl bg-rp-accent">
+                  <Activity :size="24" class="text-white" />
                 </div>
-                <h3 class="text-2xl font-black uppercase tracking-tight">Nueva Actividad</h3>
+                <h3 class="text-xl font-black uppercase tracking-tight"
+                    :class="store.isDark ? 'text-rp-text' : ''"
+                    style="font-family: 'Syne', sans-serif;">Nueva Actividad</h3>
               </div>
               <button
-                class="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 transform hover:scale-110"
+                class="p-2.5 rounded-full transition-all duration-200 transform hover:scale-110"
+                :class="store.isDark
+                  ? 'bg-rp-surface-2 hover:bg-rp-surface text-rp-muted border border-rp-border'
+                  : 'bg-gray-100 hover:bg-gray-200'"
                 @click="showAddActivityModal = false"
                 title="Cerrar"
               >
-                <X :size="20" />
+                <X :size="18" />
               </button>
             </div>
 
-            <!-- FORMULARIO para crear una nueva actividad -->
-            <!-- @submit.prevent ejecuta handleAddActivity sin recargar la página -->
-            <form @submit.prevent="handleAddActivity" class="space-y-6">
-              <!-- Campo Título de la actividad -->
+            <form @submit.prevent="handleAddActivity" class="space-y-5">
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                   Título
                 </label>
                 <input
                   v-model="newActivity.title"
                   type="text"
                   required
-                  class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                  :class="store.isDark
+                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text placeholder:text-rp-muted focus:border-rp-accent/50'
+                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
                   placeholder="Ej: Visita al templo"
                 />
               </div>
 
-              <!-- Campo Ubicación -->
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                   Ubicación
                 </label>
                 <input
                   v-model="newActivity.location"
                   type="text"
                   required
-                  class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                  :class="store.isDark
+                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text placeholder:text-rp-muted focus:border-rp-accent/50'
+                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
                   placeholder="Ej: Bangkok, Tailandia"
                 />
               </div>
 
-              <!-- Campo Hora de la actividad -->
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
+                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
                   Hora
                 </label>
                 <input
                   v-model="newActivity.time"
                   type="time"
                   required
-                  class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:bg-white focus:border-rumbo-orange focus:outline-none transition-all duration-200 shadow-sm focus:shadow-md"
+                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
+                  :class="store.isDark
+                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text focus:border-rp-accent/50'
+                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
                 />
               </div>
 
-              <!-- Botón submit: envía el formulario y crea la actividad -->
               <button
                 type="submit"
-                class="w-full bg-gradient-to-r from-rumbo-orange to-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-200 hover:shadow-orange-300 hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+                class="w-full py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
+                :class="store.isDark
+                  ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500'
+                  : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200'"
               >
                 Agregar Actividad
               </button>
@@ -421,94 +472,42 @@
 </template>
 
 <script setup lang="ts">
-// ========== IMPORTACIONES ==========
-// ref: crea variables reactivas simples (primitivos)
-// reactive: crea objetos reactivos (más complejo)
-// computed: calcula valores derivados de variables reactivas
-// watch: reacciona a cambios en variables reactivas
 import { ref, reactive, computed, watch } from 'vue'
-
-// Importa el store (gestor de estado global con Pinia)
-// Aquí se guardan y gestionan todos los viajes y actividades
 import { useAppStore } from '@/stores/app'
-
-// Importa iconos de la librería lucide (Plus, Plane, Calendar, etc.)
 import { Plus, Plane, Calendar, MapPin, Activity, Trash2, X, Clock } from 'lucide-vue-next'
-
-// Importa tipos de TypeScript para viajes y actividades
 import type { Trip, Activity as ActivityType } from '@/types'
-
-// Importa FullCalendar para Vue 3 y sus plugins
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { CalendarOptions } from '@fullcalendar/core'
 
-// ========== INSTANCIA DEL STORE ==========
-// Acceso a la tienda global de datos (viajes y actividades)
 const store = useAppStore()
 
-// ========== VARIABLES REACTIVAS DE CONTROL ==========
-// Modo de visualización: 'cards' (tarjetas) o 'calendar' (calendario)
-// Vista por defecto es 'cards'
 const viewMode = ref<'cards' | 'calendar'>('cards')
-
-// Controla si mostrar u ocultar el modal para crear un viaje
 const showAddTripModal = ref(false)
-
-// Controla si mostrar u ocultar el modal para crear una actividad
 const showAddActivityModal = ref(false)
-
-// Almacena el viaje que está siendo visualizado (null = ningún viaje seleccionado)
 const selectedTrip = ref<Trip | null>(null)
-
-// Almacena el día seleccionado del viaje (comienza en día 1)
 const selectedDay = ref(1)
 
-// ========== VARIABLES PARA EL CALENDARIO ==========
-// Map que almacena el color asignado a cada viaje
 const tripColors = new Map<string, string>()
-
-// Paleta de colores para los viajes (10 colores diferentes)
 const colorPalette = [
-  '#FF6B6B', // Rojo coral
-  '#4ECDC4', // Turquesa
-  '#FFD93D', // Amarillo
-  '#6C5CE7', // Púrpura
-  '#A29BFE', // Lavanda
-  '#FF7675', // Rojo claro
-  '#00B894', // Verde
-  '#FDCB6E', // Naranja
-  '#E84393', // Rosa magenta
-  '#0984E3'  // Azul
+  '#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#A29BFE',
+  '#FF7675', '#00B894', '#FDCB6E', '#E84393', '#0984E3'
 ]
 
-// ========== DATOS DEL FORMULARIO: NUEVO VIAJE ==========
-// Objeto reactivo que almacena los datos del viaje a crear
-// Se resetea después de crear un viaje
 const newTrip = reactive({
-  title: '',       // Nombre del viaje
-  startDate: '',   // Fecha inicio en formato YYYY-MM-DD
-  endDate: ''      // Fecha fin en formato YYYY-MM-DD
+  title: '',
+  startDate: '',
+  endDate: ''
 })
 
-// ========== DATOS DEL FORMULARIO: NUEVA ACTIVIDAD ==========
-// Objeto reactivo que almacena los datos de la actividad a crear
-// Se resetea después de crear una actividad
 const newActivity = reactive({
-  title: '',       // Nombre de la actividad
-  location: '',    // Ubicación de la actividad
-  time: ''         // Hora en formato HH:mm
+  title: '',
+  location: '',
+  time: ''
 })
 
-// ========== FUNCIÓN AUXILIAR: OBTENER COLOR DEL VIAJE ==========
-/**
- * getTripColor(tripId):
- * - Asigna un color único a cada viaje
- * - Si el viaje ya tiene color asignado, lo retorna
- * - Si no, asigna uno de la paleta y lo guarda
- */
 function getTripColor(tripId: string): string {
   if (!tripColors.has(tripId)) {
     tripColors.set(tripId, colorPalette[tripColors.size % colorPalette.length])
@@ -516,14 +515,6 @@ function getTripColor(tripId: string): string {
   return tripColors.get(tripId) || colorPalette[0]
 }
 
-// ========== COMPUTED: EVENTOS DEL CALENDARIO ==========
-/**
- * calendarEvents (computed):
- * - Transforma los viajes del store en eventos de FullCalendar
- * - Cada viaje se convierte en un evento que ocupa desde startDate hasta endDate
- * - Incluye metadatos del viaje para poder recuperarlo al hacer click
- * - Se recalcula automáticamente cuando cambian los viajes en el store
- */
 const calendarEvents = computed(() => {
   return store.trips.map((trip) => {
     return {
@@ -532,26 +523,19 @@ const calendarEvents = computed(() => {
       start: trip.startDate,
       end: new Date(new Date(trip.endDate).getTime() + 24 * 60 * 60 * 1000)
         .toISOString()
-        .split('T')[0], // +1 día para incluir el último día
+        .split('T')[0],
       backgroundColor: getTripColor(trip.id),
       borderColor: getTripColor(trip.id),
       textColor: '#fff',
       extendedProps: {
         tripId: trip.id,
-        trip: trip // Almacena el objeto Trip completo
+        trip: trip
       },
       display: 'block'
     }
   })
 })
 
-// ========== COMPUTED: OPCIONES DEL CALENDARIO ==========
-/**
- * calendarOptions (computed):
- * - Configuración de FullCalendar
- * - Incluye plugins, idioma, eventos, manejadores, etc.
- * - Se recalcula cuando cambiam los eventos (via calendarEvents)
- */
 const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
@@ -566,7 +550,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventClick: handleEventClick,
   locale: 'es',
   eventDisplay: 'block',
-  // ========== CONFIG ESPECÍFICA PARA WEEK ==========
   firstDay: 1,
   weekends: true,
   allDaySlot: false,
@@ -577,7 +560,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
   eventContent: handleEventContent,
   eventClassNames: handleEventClassNames,
-  // ========== CONFIGURACIÓN VISUAL ==========
   eventTimeFormat: {
     hour: 'numeric',
     minute: '2-digit',
@@ -586,13 +568,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventOrderStrict: true
 } as CalendarOptions))
 
-// ========== MANEJADORES DE EVENTOS DEL CALENDARIO ==========
-/**
- * handleEventClick(info):
- * - Se ejecuta cuando hace click en un evento del calendario
- * - Extrae el viaje del evento
- * - Abre el modal de detalle del viaje
- */
 function handleEventClick(info: any) {
   const trip = info.event.extendedProps.trip
   if (trip) {
@@ -600,236 +575,144 @@ function handleEventClick(info: any) {
   }
 }
 
-/**
- * handleEventContent(info):
- * - Renderiza el contenido personalizado de los eventos
- * - Muestra título, hora y estilos profesionales
- */
 function handleEventContent(info: any) {
   const event = info.event
-  const startTime = event.start 
-    ? new Date(event.start).toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
-      }) 
+  const startTime = event.start
+    ? new Date(event.start).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
     : ''
-  
-  // Truncar título si es muy largo
   const title = event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title
-  
   return {
     html: `<div class="fc-event-text"><div class="fc-event-time">${startTime}</div><div class="fc-event-title">${title}</div></div>`
   }
 }
 
-/**
- * handleEventClassNames(info):
- * - Añade clases CSS personalizadas a los eventos
- */
 function handleEventClassNames(_info: any) {
   return ['fc-event-professional']
 }
 
-// ========== FUNCIÓN: CREAR UN NUEVO VIAJE ==========
-/**
- * handleAddTrip():
- * - Crea un objeto Trip con los datos del formulario
- * - genera un ID único basado en timestamp
- * - Añade el viaje al store
- * - Cierra el modal
- * - Limpia el formulario
- */
 async function handleAddTrip() {
   const trip: Trip = {
-    id: Date.now().toString(),  // ID único = timestamp actual
-    title: newTrip.title,        // Título ingresado en el formulario
-    startDate: newTrip.startDate,// Fecha inicio ingresada
-    endDate: newTrip.endDate,    // Fecha fin ingresada
-    activities: {}               // Inicia sin actividades
+    id: Date.now().toString(),
+    title: newTrip.title,
+    startDate: newTrip.startDate,
+    endDate: newTrip.endDate,
+    activities: {}
   }
-
-  // Añade el viaje a la tienda global
   try {
     await store.addTrip(trip)
   } catch {
     return
   }
-  
-  // Cierra el modal
   showAddTripModal.value = false
-  
-  // Limpia el formulario para la próxima vez
   newTrip.title = ''
   newTrip.startDate = ''
   newTrip.endDate = ''
 }
 
-// ========== FUNCIÓN: CREAR UNA NUEVA ACTIVIDAD ==========
-/**
- * handleAddActivity():
- * - Valida que hay un viaje seleccionado
- * - Crea un objeto Activity con los datos del formulario
- * - Genera un ID único basado en timestamp
- * - Añade la actividad al store en el viaje y día seleccionado
- * - Cierra el modal
- * - Limpia el formulario
- * - Refresca los datos del viaje seleccionado
- */
 async function handleAddActivity() {
-  // Valida que hay un viaje seleccionado (seguridad)
   if (!selectedTrip.value) return
-
   const activity: ActivityType = {
-    id: Date.now().toString(),       // ID único = timestamp actual
-    title: newActivity.title,        // Título ingresado
-    location: newActivity.location,  // Ubicación ingresada
-    time: newActivity.time           // Hora ingresada en formato HH:mm
+    id: Date.now().toString(),
+    title: newActivity.title,
+    location: newActivity.location,
+    time: newActivity.time
   }
-
-  // Añade la actividad al store: viaje y día específicos
   try {
     await store.addActivity(selectedTrip.value.id, selectedDay.value, activity)
   } catch {
     return
   }
-  
-  // Cierra el modal
   showAddActivityModal.value = false
-
-  // Limpia el formulario para la próxima vez
   newActivity.title = ''
   newActivity.location = ''
   newActivity.time = ''
-
-  // Refresca los datos del viaje seleccionado (actualiza en pantalla)
-  // Busca el viaje en el store y actualiza selectedTrip con los datos nuevos
   selectedTrip.value = store.trips.find(t => t.id === selectedTrip.value?.id) || null
 }
 
-// ========== FUNCIÓN: SELECCIONAR UN VIAJE ==========
-/**
- * selectTrip(trip):
- * - Abre el modal de detalle del viaje
- * - Resetea el contador al día 1
- * - Prepara la vista para mostrar las actividades del viaje
- */
 function selectTrip(trip: Trip) {
-  selectedTrip.value = trip  // Asigna el viaje como seleccionado
-  selectedDay.value = 1      // Comienza en el día 1
+  selectedTrip.value = trip
+  selectedDay.value = 1
 }
 
-// ========== FUNCIÓN: ELIMINAR UN VIAJE ==========
-/**
- * deleteTrip(id):
- * - Pide confirmación al usuario
- * - Si confirma, elimina el viaje del store
- */
 async function deleteTrip(id: string) {
-  // Muestra un diálogo de confirmación
   if (confirm('¿Estás seguro de que quieres eliminar este viaje?')) {
     await store.deleteTrip(id)
   }
 }
 
-// ========== FUNCIÓN AUXILIAR: FORMATEAR FECHA ==========
-/**
- * formatDate(dateStr):
- * - Convierte una fecha en formato YYYY-MM-DD a "25 dic"
- * - Ejemplo: "2024-12-25" → "25 dic"
- * - Usa locales en español
- */
 function formatDate(dateStr: string) {
   const date = new Date(dateStr)
-  // toLocaleDateString en español: { day: 'numeric', month: 'short' }
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-// ========== FUNCIÓN AUXILIAR: CONTAR DÍAS DEL VIAJE ==========
-/**
- * getDaysCount(trip):
- * - Calcula la diferencia en días entre fecha inicio y fin
- * - Suma 1 para incluir ambos días
- * - Ejemplo: 1 dic a 5 dic = 5 días (no 4)
- */
 function getDaysCount(trip: Trip) {
   const start = new Date(trip.startDate)
   const end = new Date(trip.endDate)
-  // Calcula diferencia en milisegundos
   const diffTime = Math.abs(end.getTime() - start.getTime())
-  // Convierte milisegundos a días (1000ms * 60s * 60m * 24h)
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  // Suma 1 para incluir el día de inicio y fin
   return diffDays + 1
 }
 
-// ========== FUNCIÓN AUXILIAR: CONTAR ACTIVIDADES ==========
-/**
- * getActivitiesCount(trip):
- * - Suma TODAS las actividades de todos los días del viaje
- * - trip.activities = { 1: [act1, act2], 2: [act3], ... }
- * - Retorna el total de actividades
- */
 function getActivitiesCount(trip: Trip) {
-  // Object.values(trip.activities) retorna arrays de actividades
-  // reduce suma el largo de cada array
   return Object.values(trip.activities).reduce((sum, activities) => sum + activities.length, 0)
 }
 
-// ========== FUNCIÓN AUXILIAR: GET ACTIVIDADES DE UN DÍA ==========
-/**
- * getActivitiesForDay(trip, day):
- * - Retorna las actividades de un día específico del viaje
- * - Si no hay actividades ese día, retorna un array vacío
- * - Ejemplo: day=1 devuelve trip.activities[1]
- */
 function getActivitiesForDay(trip: Trip, day: number) {
-  return trip.activities[day] || []  // Retorna actividades o array vacío
+  return trip.activities[day] || []
 }
 
-// ========== WATCHER: REACTUALIZAR CALENDARIO ==========
-/**
- * watch(store.trips):
- * - Observa cambios en los viajes del store
- * - Reactualiza automáticamente el calendario cuando cambian
- * - El computed de calendarEvents se recalcula automáticamente
- */
 watch(() => store.trips, () => {
   // El calendario se actualiza automáticamente via calendarEvents computed
 }, { deep: true })
 </script>
 
 <style scoped>
-/* ========== ANIMACIONES PARA MODALES ========== */
+/* CSS vars */
+.bg-rp-bg { background-color: var(--rp-bg); }
+.bg-rp-surface { background-color: var(--rp-surface); }
+.bg-rp-surface-2 { background-color: var(--rp-surface-2); }
+.bg-rp-accent { background-color: var(--rp-accent); }
+.border-rp-border { border-color: var(--rp-border); }
+.border-rp-accent\/30 { border-color: rgba(249,115,22,0.3); }
+.border-rp-accent\/40 { border-color: rgba(249,115,22,0.4); }
+.border-rp-accent\/50 { border-color: rgba(249,115,22,0.5); }
+.text-rp-text { color: var(--rp-text); }
+.text-rp-muted { color: var(--rp-muted); }
+.text-rp-accent { color: var(--rp-accent); }
+.text-rp-bg { color: var(--rp-bg); }
+.hover\:border-rp-accent\/30:hover { border-color: rgba(249,115,22,0.3); }
+.hover\:border-rp-accent\/40:hover { border-color: rgba(249,115,22,0.4); }
+.hover\:text-rp-accent:hover { color: var(--rp-accent); }
+.hover\:text-rp-text:hover { color: var(--rp-text); }
+.hover\:bg-rp-surface:hover { background-color: var(--rp-surface); }
+.focus\:border-rp-accent\/50:focus { border-color: rgba(249,115,22,0.5); }
+.placeholder\:text-rp-muted::placeholder { color: var(--rp-muted); }
+.shadow-orange-900\/30 { --tw-shadow-color: rgba(124,45,18,0.3); }
+.shadow-orange-900\/40 { --tw-shadow-color: rgba(124,45,18,0.4); }
+.shadow-orange-900\/60 { --tw-shadow-color: rgba(124,45,18,0.6); }
 
-/* Animación activa: aplica transición suave de 0.3s cuando entra o sale */
 .modal-enter-active,
 .modal-leave-active {
   transition: all 0.3s ease;
 }
-
-/* Estado inicial y final de la animación: invisible y 90% del tamaño */
 .modal-enter-from,
 .modal-leave-to {
-  opacity: 0;           /* Transparencia total */
-  transform: scale(0.9); /* 90% del tamaño original */
+  opacity: 0;
+  transform: scale(0.9);
 }
 
-/* ========== ANIMACIONES PARA TARJETAS ========== */
-
-/* Animación de entrada para las tarjetas */
 .trip-card-enter-active {
   transition: all 0.3s ease;
 }
-
 .trip-card-enter-from {
   opacity: 0;
   transform: translateY(10px) scale(0.95);
 }
 
-/* ========== ESTILOS DE GRID RESPONSIVE ========== */
-
-/* Contenedor de tarjetas con auto-layout y gap personalizado */
 .trips-grid {
   display: grid;
   grid-auto-flow: row;
@@ -838,158 +721,118 @@ watch(() => store.trips, () => {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* ========== ESTILOS DE FULLCALENDAR - VISTA SEMANA/MES PROFESIONAL ========== */
-
-/* Contenedor general del calendario */
+/* FullCalendar dark theme */
 :deep(.fc) {
-  font-family: inherit;
-  color: #1f2937;
-  background: #ffffff;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--rp-text, #1f2937);
+  background: var(--rp-surface, #ffffff);
 }
 
-/* HEADER TOOLBAR */
 :deep(.fc-header-toolbar) {
-  background: linear-gradient(135deg, #fff5f0 0%, #ffffff 100%);
-  padding: 2.5rem 2rem;
-  border-bottom: 3px solid #ff6b35;
+  background: var(--rp-surface, #fff5f0);
+  padding: 2rem 1.75rem;
+  border-bottom: 2px solid var(--rp-accent, #ff6b35);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 2rem;
+  gap: 1.5rem;
   margin: 0;
 }
 
 :deep(.fc-toolbar-title) {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.02em;
-  color: #1f2937;
+  color: var(--rp-text, #1f2937);
+  font-family: 'Syne', sans-serif;
   margin: 0;
 }
 
-/* Botones de navegación */
 :deep(.fc-button-primary) {
-  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.85rem;
-  padding: 0.85rem 1.5rem;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  background: var(--rp-accent, #ff6b35) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: white !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 0.8rem !important;
+  padding: 0.7rem 1.2rem !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
 }
 
 :deep(.fc-button-primary:hover) {
-  background: linear-gradient(135deg, #ff5722 0%, #ff4500 100%);
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
-  transform: translateY(-3px);
+  background: #ea6010 !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4) !important;
+  transform: translateY(-2px) !important;
 }
 
 :deep(.fc-button-primary.fc-button-active) {
-  background: linear-gradient(135deg, #ff5722 0%, #ff4500 100%);
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+  background: #ea6010 !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4) !important;
 }
 
-:deep(.fc-button-primary:focus) {
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
-}
-
-/* ENCABEZADOS DE COLUMNAS (DÍAS) */
 :deep(.fc-col-header-cell) {
-  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
-  border-color: #e5e7eb;
-  border-width: 1px;
-  padding: 1.5rem 0.75rem;
+  background: var(--rp-surface-2, #f9fafb) !important;
+  border-color: var(--rp-border, #e5e7eb) !important;
+  padding: 1rem 0.5rem !important;
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   text-transform: capitalize;
-  letter-spacing: 0.01em;
-  color: #374151;
-  position: relative;
-  transition: all 0.2s ease;
+  color: var(--rp-text, #374151);
 }
 
-:deep(.fc-col-header-cell:hover) {
-  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
-}
-
-/* Resaltar hoy en encabezado */
 :deep(.fc-col-header-cell.fc-day-today) {
-  background: linear-gradient(180deg, #fff5f0 0%, #ffe8dd 100%);
-  border-color: #ff6b35 !important;
-  border-width: 2px !important;
-  color: #ff6b35;
-  font-weight: 900;
-  box-shadow: inset 0 -3px 0 #ff6b35;
+  color: var(--rp-accent, #ff6b35) !important;
+  font-weight: 900 !important;
 }
 
-/* CONTENEDOR DE DÍAS - DAYGRID */
 :deep(.fc-daycell) {
-  border-color: #e5e7eb;
-  background: #ffffff;
-  transition: all 0.2s ease;
-  position: relative;
-  min-height: 180px;
+  border-color: var(--rp-border, #e5e7eb) !important;
+  background: var(--rp-surface, #ffffff) !important;
+  min-height: 160px;
 }
 
 :deep(.fc-daycell:hover) {
-  background: #fafafa;
-  border-color: #ff6b35;
+  background: var(--rp-surface-2, #fafafa) !important;
 }
 
 :deep(.fc-daycell.fc-day-today) {
-  background-color: #fffbeb !important;
-  border-color: #ff6b35 !important;
-  border-width: 2px !important;
-  box-shadow: inset 0 -3px 0 #ff6b35;
+  background-color: rgba(249, 115, 22, 0.06) !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
 }
 
-/* Número del día */
 :deep(.fc-daycell-number) {
   padding: 0.75rem;
   font-weight: 700;
-  font-size: 1.2rem;
-  color: #1f2937;
+  font-size: 1.1rem;
+  color: var(--rp-text, #1f2937);
 }
 
-:deep(.fc-daycell-number.fc-day-today) {
-  color: #ff6b35;
-}
-
-/* Frame de la celda */
 :deep(.fc-daycell-frame) {
-  padding: 1rem 0.75rem;
+  padding: 0.75rem;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-/* EVENTOS - ESTILOS GENERALES */
 :deep(.fc-event) {
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-clip: padding-box;
-  position: relative;
-  margin: 0.5rem 0;
-  padding: 0.75rem;
+  margin: 0.4rem 0;
+  padding: 0.6rem;
   font-weight: 700;
 }
 
@@ -999,29 +842,23 @@ watch(() => store.trips, () => {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
-  background: rgba(255, 255, 255, 0.5);
+  width: 3px;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 :deep(.fc-event:hover) {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-3px) scale(1.02) !important;
   z-index: 10;
 }
 
-:deep(.fc-event:active) {
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Contenido del evento */
 :deep(.fc-event-main) {
-  padding: 0.6rem 0.75rem;
-  background: inherit;
+  padding: 0.5rem 0.6rem;
 }
 
 :deep(.fc-event-title) {
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.01em;
   line-height: 1.3;
@@ -1032,49 +869,41 @@ watch(() => store.trips, () => {
   white-space: normal;
 }
 
-/* TIME LABEL EN EVENTOS */
 :deep(.fc-event-time) {
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
-/* FIN DE SEMANA */
 :deep(.fc-day-sat),
 :deep(.fc-day-sun) {
-  background: linear-gradient(180deg, rgba(255, 107, 53, 0.02) 0%, rgba(255, 107, 53, 0.01) 100%);
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.02) 0%, rgba(249, 115, 22, 0.01) 100%);
 }
 
 :deep(.fc-day-sat .fc-daycell-number),
 :deep(.fc-day-sun .fc-daycell-number) {
-  color: #ff6b35;
+  color: var(--rp-accent, #f97316);
   font-weight: 900;
 }
 
-/* OTROS MESES */
 :deep(.fc-day-other) {
-  opacity: 0.5;
-  background: #f9f9f9;
+  opacity: 0.4;
 }
 
 :deep(.fc-day-other .fc-daycell-number) {
-  color: #d1d5db;
+  color: var(--rp-muted, #d1d5db);
 }
 
-/* ========== VISTA SEMANAL (DAY GRID WEEK) ========== */
-
 :deep(.fc-daygrid-day-events) {
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 :deep(.fc-daygrid-day-frame) {
-  min-height: 200px;
+  min-height: 160px;
 }
-
-/* ========== CONTENIDO PERSONALIZADO DE EVENTOS ========== */
 
 :deep(.fc-event-text) {
   display: flex;
@@ -1082,22 +911,20 @@ watch(() => store.trips, () => {
   width: 100%;
   height: 100%;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
 :deep(.fc-event-professional) {
   border: none !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   overflow: hidden !important;
 }
 
 :deep(.fc-event-professional:hover) {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
-  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-3px) scale(1.02) !important;
 }
-
-/* ========== ANIMACIONES SUAVES ========== */
 
 :deep(.fc-event),
 :deep(.fc-button-primary),
@@ -1109,153 +936,37 @@ watch(() => store.trips, () => {
   transition: all 0.2s ease;
 }
 
-/* ========== RESPONSIVE ========== */
-
+/* Responsive */
 @media (max-width: 1200px) {
-  :deep(.fc-header-toolbar) {
-    padding: 2rem 1.5rem;
-    gap: 1.5rem;
-  }
-
-  :deep(.fc-toolbar-title) {
-    font-size: 2rem;
-  }
-
-  :deep(.fc-button-primary) {
-    padding: 0.7rem 1.2rem;
-    font-size: 0.8rem;
-  }
-
-  :deep(.fc-col-header-cell) {
-    padding: 1.25rem 0.5rem;
-    font-size: 0.95rem;
-  }
-
-  :deep(.fc-daycell) {
-    min-height: 160px;
-  }
+  :deep(.fc-header-toolbar) { padding: 1.5rem; gap: 1.2rem; }
+  :deep(.fc-toolbar-title) { font-size: 1.75rem; }
+  :deep(.fc-button-primary) { padding: 0.6rem 1rem !important; font-size: 0.75rem !important; }
+  :deep(.fc-col-header-cell) { padding: 0.9rem 0.4rem !important; font-size: 0.85rem; }
+  :deep(.fc-daycell) { min-height: 140px; }
 }
 
 @media (max-width: 1024px) {
-  :deep(.fc-toolbar-title) {
-    font-size: 1.75rem;
-  }
-
-  :deep(.fc-header-toolbar) {
-    padding: 1.5rem;
-    gap: 1rem;
-  }
-
-  :deep(.fc-col-header-cell) {
-    font-size: 0.9rem;
-    padding: 1rem 0.4rem;
-  }
-
-  :deep(.fc-daycell) {
-    min-height: 140px;
-  }
-
-  :deep(.fc-event-title) {
-    font-size: 0.85rem;
-  }
-
-  :deep(.fc-event-main) {
-    padding: 0.55rem;
-  }
-
-  :deep(.fc-daycell-number) {
-    font-size: 1rem;
-  }
+  :deep(.fc-toolbar-title) { font-size: 1.5rem; }
+  :deep(.fc-header-toolbar) { padding: 1.25rem; gap: 0.9rem; }
+  :deep(.fc-daycell) { min-height: 120px; }
+  :deep(.fc-event-title) { font-size: 0.8rem; }
 }
 
 @media (max-width: 768px) {
-  :deep(.fc-toolbar-title) {
-    font-size: 1.4rem;
-  }
-
-  :deep(.fc-header-toolbar) {
-    padding: 1.2rem;
-    gap: 0.8rem;
-    flex-direction: column;
-  }
-
-  :deep(.fc-col-header-cell) {
-    font-size: 0.8rem;
-    padding: 0.75rem 0.2rem;
-  }
-
-  :deep(.fc-daycell) {
-    min-height: 120px;
-  }
-
-  :deep(.fc-daycell-frame) {
-    padding: 0.75rem 0.5rem;
-  }
-
-  :deep(.fc-event-title) {
-    font-size: 0.75rem;
-  }
-
-  :deep(.fc-event-main) {
-    padding: 0.45rem;
-  }
-
-  :deep(.fc-daycell-number) {
-    font-size: 0.95rem;
-    padding: 0.5rem;
-  }
-
-  :deep(.fc-button-primary) {
-    padding: 0.6rem 1rem;
-    font-size: 0.75rem;
-  }
+  :deep(.fc-toolbar-title) { font-size: 1.2rem; }
+  :deep(.fc-header-toolbar) { padding: 1rem; gap: 0.7rem; flex-direction: column; }
+  :deep(.fc-col-header-cell) { font-size: 0.75rem !important; padding: 0.6rem 0.2rem !important; }
+  :deep(.fc-daycell) { min-height: 100px; }
+  :deep(.fc-event-title) { font-size: 0.7rem; }
+  :deep(.fc-button-primary) { padding: 0.5rem 0.8rem !important; font-size: 0.7rem !important; }
 }
 
 @media (max-width: 480px) {
-  :deep(.fc-toolbar-title) {
-    font-size: 1.1rem;
-  }
-
-  :deep(.fc-header-toolbar) {
-    padding: 0.9rem;
-    gap: 0.5rem;
-  }
-
-  :deep(.fc-col-header-cell) {
-    font-size: 0.65rem;
-    padding: 0.5rem 0.1rem;
-    min-height: auto;
-  }
-
-  :deep(.fc-daycell) {
-    min-height: 100px;
-  }
-
-  :deep(.fc-daycell-frame) {
-    padding: 0.5rem 0.35rem;
-  }
-
-  :deep(.fc-event-title) {
-    font-size: 0.65rem;
-  }
-
-  :deep(.fc-event-main) {
-    padding: 0.35rem;
-  }
-
-  :deep(.fc-daycell-number) {
-    font-size: 0.85rem;
-    padding: 0.4rem;
-  }
-
-  :deep(.fc-button-primary) {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.65rem;
-  }
-
-  :deep(.fc-event) {
-    margin: 0.35rem 0;
-    padding: 0.5rem;
-  }
+  :deep(.fc-toolbar-title) { font-size: 1rem; }
+  :deep(.fc-header-toolbar) { padding: 0.75rem; gap: 0.5rem; }
+  :deep(.fc-col-header-cell) { font-size: 0.65rem !important; padding: 0.4rem 0.1rem !important; }
+  :deep(.fc-daycell) { min-height: 85px; }
+  :deep(.fc-event-title) { font-size: 0.6rem; }
+  :deep(.fc-button-primary) { padding: 0.4rem 0.6rem !important; font-size: 0.6rem !important; }
 }
 </style>

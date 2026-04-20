@@ -1,141 +1,202 @@
 <template>
-  <div class="p-6 lg:p-12 min-h-full">
-    <div class="max-w-6xl mx-auto">
+  <div class="p-5 lg:p-10 min-h-full">
+    <div class="max-w-5xl mx-auto">
+      <!-- Back button -->
       <div class="mb-6">
         <button
-          class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-all"
+          class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
+          :class="store.isDark
+            ? 'bg-rp-surface-2 border border-rp-border text-rp-muted hover:text-rp-accent hover:border-rp-accent/30'
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
           @click="store.closeAccommodationDetail()"
         >
-          <ArrowLeft :size="18" />
+          <ArrowLeft :size="16" />
           <span>Volver</span>
         </button>
       </div>
 
       <div
         v-if="selectedAccommodation"
-        class="bg-white rounded-3xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.08)] border border-gray-100"
+        class="rounded-3xl overflow-hidden transition-colors"
+        :class="store.isDark
+          ? 'bg-rp-surface border border-rp-border shadow-[0_24px_48px_rgba(0,0,0,0.5)]'
+          : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <img
-          :src="selectedAccommodation.image"
-          :alt="selectedAccommodation.title"
-          class="w-full h-72 lg:h-96 object-cover"
-        />
+        <!-- Hero image -->
+        <div class="relative">
+          <img
+            :src="selectedAccommodation.image"
+            :alt="selectedAccommodation.title"
+            class="w-full h-64 lg:h-80 object-cover"
+          />
+          <div v-if="store.isDark" class="absolute inset-0 bg-gradient-to-t from-rp-surface/80 via-transparent to-transparent" />
+        </div>
 
-        <div class="p-6 lg:p-10 space-y-6">
+        <div class="p-6 lg:p-9 space-y-6">
+          <!-- Header: title + price -->
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 class="text-3xl lg:text-4xl font-black text-gray-800 uppercase tracking-tight">
+              <h2 class="text-2xl lg:text-3xl font-black uppercase tracking-tight"
+                  :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
+                  style="font-family: 'Syne', sans-serif;">
                 {{ selectedAccommodation.title }}
               </h2>
-              <p class="text-gray-500 font-medium mt-2">
+              <p class="font-medium mt-2 text-sm"
+                 :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                 {{ selectedAccommodation.location }}, {{ selectedAccommodation.city }}, {{ selectedAccommodation.country }}
               </p>
             </div>
 
             <div class="text-right">
-              <p class="text-xs uppercase tracking-widest text-gray-400 font-bold">Precio por noche</p>
-              <p class="text-3xl font-black text-rumbo-orange">
+              <p class="text-xs uppercase tracking-widest font-bold"
+                 :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">Precio por noche</p>
+              <p class="text-3xl font-black text-rp-accent">
                 {{ selectedAccommodation.currency }} {{ selectedAccommodation.pricePerNight }}
               </p>
-              <p class="text-sm text-gray-600 mt-1">
+              <p class="text-sm mt-1" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
                 ⭐ {{ selectedAccommodation.rating }} ({{ selectedAccommodation.reviewsCount }} reseñas)
               </p>
               <button
-                class="mt-3 inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black uppercase tracking-wider shadow-[0_10px_24px_rgba(16,185,129,0.35)] hover:from-emerald-600 hover:to-green-700 hover:shadow-[0_14px_28px_rgba(16,185,129,0.45)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98]"
+                class="mt-3 inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-black uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98]"
+                :class="store.isDark
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_8px_20px_rgba(16,185,129,0.3)]'
+                  : 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-[0_10px_24px_rgba(16,185,129,0.35)] hover:shadow-[0_14px_28px_rgba(16,185,129,0.45)]'"
               >
                 Comprar
               </button>
             </div>
           </div>
 
-          <p class="text-gray-700 leading-relaxed">
+          <!-- Description -->
+          <p class="leading-relaxed text-sm"
+             :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ selectedAccommodation.description }}
           </p>
 
+          <!-- Amenities -->
           <div>
-            <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-3">Comodidades</h3>
+            <h3 class="text-xs font-black uppercase tracking-widest mb-3"
+                :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Comodidades</h3>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="amenity in selectedAccommodation.amenities"
                 :key="amenity"
-                class="px-3 py-1.5 rounded-full bg-orange-50 text-rumbo-orange text-xs font-bold uppercase tracking-wide"
+                class="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide"
+                :class="store.isDark
+                  ? 'bg-orange-950/40 text-rp-accent border border-orange-900/40'
+                  : 'bg-orange-50 text-rumbo-orange'"
               >
                 {{ amenity }}
               </span>
             </div>
           </div>
 
+          <!-- Tags -->
           <div>
-            <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-3">Etiquetas</h3>
+            <h3 class="text-xs font-black uppercase tracking-widest mb-3"
+                :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Etiquetas</h3>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="tag in selectedAccommodation.tags"
                 :key="tag"
-                class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold uppercase tracking-wide"
+                class="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide"
+                :class="store.isDark
+                  ? 'bg-rp-surface-2 text-rp-muted border border-rp-border'
+                  : 'bg-gray-100 text-gray-700'"
               >
                 {{ tag }}
               </span>
             </div>
           </div>
 
-          <div class="bg-gray-50 rounded-2xl p-5 space-y-4 border border-gray-100">
-            <h3 class="text-sm font-black uppercase tracking-widest text-gray-500">Disponibilidad y precio</h3>
+          <!-- Availability + calendar -->
+          <div class="rounded-2xl p-5 space-y-4 transition-colors"
+               :class="store.isDark
+                 ? 'bg-rp-surface-2 border border-rp-border'
+                 : 'bg-gray-50 border border-gray-100'">
+            <h3 class="text-xs font-black uppercase tracking-widest"
+                :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponibilidad y precio</h3>
 
-            <p class="text-sm text-gray-600">
+            <p class="text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
               Disponible del {{ formatDate(selectedAccommodation.availableFrom) }} al {{ formatDate(selectedAccommodation.availableTo) }}
             </p>
 
-            <div class="bg-white rounded-2xl p-3 border border-gray-100 overflow-hidden rp-calendar-shell">
+            <div class="rounded-2xl p-3 overflow-hidden rp-calendar-shell"
+                 :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
               <FullCalendar :key="calendarKey" :options="calendarOptions" />
             </div>
 
+            <!-- Check-in / Check-out -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="bg-white rounded-xl p-3 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Check-in</p>
-                <p class="font-bold text-gray-800">{{ checkInDate ? formatDate(checkInDate) : 'Selecciona una fecha' }}</p>
+              <div class="rounded-xl p-3 transition-colors"
+                   :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
+                <p class="text-xs font-bold uppercase tracking-wider mb-1"
+                   :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Check-in</p>
+                <p class="font-bold" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+                  {{ checkInDate ? formatDate(checkInDate) : 'Selecciona una fecha' }}
+                </p>
               </div>
-              <div class="bg-white rounded-xl p-3 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Check-out</p>
-                <p class="font-bold text-gray-800">{{ checkOutDate ? formatDate(checkOutDate) : 'Selecciona una fecha' }}</p>
+              <div class="rounded-xl p-3 transition-colors"
+                   :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
+                <p class="text-xs font-bold uppercase tracking-wider mb-1"
+                   :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Check-out</p>
+                <p class="font-bold" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+                  {{ checkOutDate ? formatDate(checkOutDate) : 'Selecciona una fecha' }}
+                </p>
               </div>
             </div>
 
+            <!-- Hint + clear -->
             <div class="flex items-center justify-between gap-3">
-              <p class="text-sm text-gray-500 font-medium">
+              <p class="text-sm font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                 {{ selectionHint }}
               </p>
               <button
-                class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-orange-300 hover:text-rumbo-orange transition-colors"
+                class="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+                :class="store.isDark
+                  ? 'bg-rp-surface border border-rp-border text-rp-muted hover:border-rp-accent/30 hover:text-rp-accent'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-rumbo-orange'"
                 @click="resetSelection"
               >
                 Limpiar
               </button>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600">
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center gap-3 text-xs font-semibold"
+                 :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
               <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-400" /> Seleccionado</span>
-              <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-400" /> No disponible</span>
-              <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-400" /> Disponible</span>
+              <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500" /> No disponible</span>
+              <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500" /> Disponible</span>
             </div>
 
-            <div v-if="bookingError" class="text-sm text-red-600 font-semibold">
+            <!-- Error -->
+            <div v-if="bookingError" class="text-sm text-red-400 font-semibold">
               {{ bookingError }}
             </div>
 
+            <!-- Price total -->
             <div
               v-else-if="canCalculatePrice"
-              class="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl p-4 border border-orange-100"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 transition-colors"
+              :class="store.isDark
+                ? 'bg-orange-950/20 border border-orange-900/30'
+                : 'bg-white border border-orange-100'"
             >
-              <p class="text-sm text-gray-600">
+              <p class="text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
                 {{ nightsCount }} noche<span v-if="nightsCount !== 1">s</span> x {{ selectedAccommodation.currency }} {{ selectedAccommodation.pricePerNight }}
               </p>
-              <p class="text-2xl font-black text-rumbo-orange">
+              <p class="text-2xl font-black text-rp-accent">
                 Total: {{ selectedAccommodation.currency }} {{ totalPrice }}
               </p>
             </div>
 
+            <!-- Add to plan button -->
             <button
-              class="w-full mt-2 py-4 rounded-2xl bg-gradient-to-r from-rumbo-orange to-orange-600 text-white font-black uppercase tracking-widest shadow-[0_14px_30px_rgba(249,115,22,0.35)] hover:from-orange-600 hover:to-orange-700 hover:shadow-[0_18px_34px_rgba(249,115,22,0.45)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+              class="w-full mt-2 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="store.isDark
+                ? 'bg-rp-accent text-white shadow-[0_8px_24px_rgba(249,115,22,0.3)] hover:bg-orange-500 hover:shadow-[0_12px_32px_rgba(249,115,22,0.4)]'
+                : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-[0_14px_30px_rgba(249,115,22,0.35)] hover:from-orange-600 hover:to-orange-700'"
               :disabled="!canCalculatePrice"
               @click="openAddToPlanModal"
             >
@@ -145,14 +206,25 @@
         </div>
       </div>
 
+      <!-- Not found state -->
       <div
         v-else
-        class="bg-white rounded-3xl p-10 text-center shadow-[0_20px_40px_rgba(0,0,0,0.08)] border border-gray-100"
+        class="rounded-3xl p-10 text-center transition-colors"
+        :class="store.isDark
+          ? 'bg-rp-surface border border-rp-border shadow-[0_20px_40px_rgba(0,0,0,0.4)]'
+          : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <h2 class="text-2xl font-black text-gray-800 mb-3">Alojamiento no encontrado</h2>
-        <p class="text-gray-500 mb-6">No se pudo cargar el detalle del alojamiento seleccionado.</p>
+        <h2 class="text-2xl font-black mb-3" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+          Alojamiento no encontrado
+        </h2>
+        <p class="mb-6 text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+          No se pudo cargar el detalle del alojamiento seleccionado.
+        </p>
         <button
-          class="px-6 py-3 rounded-xl bg-rumbo-orange text-white font-bold uppercase tracking-wider hover:bg-orange-600 transition-colors"
+          class="px-6 py-3 rounded-xl font-bold uppercase tracking-wider transition-colors"
+          :class="store.isDark
+            ? 'bg-rp-accent text-white hover:bg-orange-500'
+            : 'bg-rumbo-orange text-white hover:bg-orange-600'"
           @click="store.closeAccommodationDetail()"
         >
           Volver al inicio
@@ -161,18 +233,30 @@
     </div>
   </div>
 
+  <!-- Plan selector modal -->
   <Teleport to="body">
     <Transition name="modal">
       <div
         v-if="showPlanSelectorModal"
-        class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
         @click.self="showPlanSelectorModal = false"
       >
-        <div class="bg-white rounded-[28px] p-6 max-w-lg w-full shadow-2xl border border-orange-100">
-          <h3 class="text-xl font-black uppercase tracking-tight text-gray-800 mb-2">Selecciona un plan</h3>
-          <p class="text-sm text-gray-500 mb-5">Elige el viaje donde quieres añadir este alojamiento.</p>
+        <div class="rounded-[28px] p-6 max-w-lg w-full shadow-2xl transition-colors"
+             :class="store.isDark
+               ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
+               : 'bg-white border border-orange-100'">
+          <h3 class="text-xl font-black uppercase tracking-tight mb-2"
+              :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
+              style="font-family: 'Syne', sans-serif;">Selecciona un plan</h3>
+          <p class="text-sm mb-5" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+            Elige el viaje donde quieres añadir este alojamiento.
+          </p>
 
-          <div v-if="store.trips.length === 0" class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <div v-if="store.trips.length === 0"
+               class="rounded-xl p-4 text-sm transition-colors"
+               :class="store.isDark
+                 ? 'bg-rp-surface-2 border border-rp-border text-rp-muted'
+                 : 'border border-gray-200 bg-gray-50 text-gray-600'">
             No tienes planes creados todavía. Crea uno primero desde la vista Plan.
           </div>
 
@@ -181,25 +265,40 @@
               v-for="trip in store.trips"
               :key="trip.id"
               class="w-full text-left p-4 rounded-xl border-2 transition-all"
-              :class="selectedPlanId === trip.id ? 'border-rumbo-orange bg-orange-50' : 'border-gray-200 hover:border-orange-200'"
+              :class="selectedPlanId === trip.id
+                ? store.isDark
+                  ? 'border-rp-accent bg-orange-950/20'
+                  : 'border-rumbo-orange bg-orange-50'
+                : store.isDark
+                  ? 'border-rp-border hover:border-rp-accent/40 bg-rp-surface-2'
+                  : 'border-gray-200 hover:border-orange-200'"
               @click="selectedPlanId = trip.id"
             >
-              <p class="font-bold text-gray-800 uppercase text-sm tracking-wide">{{ trip.title }}</p>
-              <p class="text-xs text-gray-500 mt-1">{{ formatDate(trip.startDate) }} - {{ formatDate(trip.endDate) }}</p>
+              <p class="font-bold uppercase text-sm tracking-wide"
+                 :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">{{ trip.title }}</p>
+              <p class="text-xs mt-1" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                {{ formatDate(trip.startDate) }} - {{ formatDate(trip.endDate) }}
+              </p>
             </button>
           </div>
 
-          <p v-if="planModalError" class="text-sm text-red-600 font-semibold mt-4">{{ planModalError }}</p>
+          <p v-if="planModalError" class="text-sm text-red-400 font-semibold mt-4">{{ planModalError }}</p>
 
           <div class="flex items-center justify-end gap-3 mt-6">
             <button
-              class="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50"
+              class="px-4 py-2 rounded-lg border font-bold text-sm transition-colors"
+              :class="store.isDark
+                ? 'border-rp-border text-rp-muted hover:bg-rp-surface-2'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'"
               @click="showPlanSelectorModal = false"
             >
               Cancelar
             </button>
             <button
-              class="px-5 py-2 rounded-lg bg-gradient-to-r from-rumbo-orange to-orange-600 text-white font-bold text-sm uppercase tracking-wider disabled:opacity-60"
+              class="px-5 py-2 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-60 transition-colors"
+              :class="store.isDark
+                ? 'bg-rp-accent text-white hover:bg-orange-500'
+                : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white'"
               :disabled="store.trips.length === 0"
               @click="confirmAddToPlan"
             >
@@ -246,17 +345,14 @@ const nightsCount = computed(() => {
 
 const hasBlockedDateInRange = computed(() => {
   if (!selectedAccommodation.value || !checkInDate.value || !checkOutDate.value) return false
-
   const blocked = new Set(selectedAccommodation.value.unavailableDates)
   const current = new Date(checkInDate.value)
   const end = new Date(checkOutDate.value)
-
   while (current < end) {
     const dayKey = current.toISOString().split('T')[0]
     if (blocked.has(dayKey)) return true
     current.setDate(current.getDate() + 1)
   }
-
   return false
 })
 
@@ -306,19 +402,16 @@ function handleDateClick(info: { dateStr: string }) {
     selectionError.value = 'Ese dia no esta disponible. Elige otra fecha.'
     return
   }
-
   if (!checkInDate.value || (checkInDate.value && checkOutDate.value)) {
     checkInDate.value = clicked
     checkOutDate.value = ''
     return
   }
-
   if (clicked <= checkInDate.value) {
     checkInDate.value = clicked
     checkOutDate.value = ''
     return
   }
-
   const blocked = selectedAccommodation.value?.unavailableDates ?? []
   let current = new Date(checkInDate.value)
   const end = new Date(clicked)
@@ -331,7 +424,6 @@ function handleDateClick(info: { dateStr: string }) {
     }
     current.setDate(current.getDate() + 1)
   }
-
   checkOutDate.value = clicked
 }
 
@@ -345,28 +437,17 @@ function getDateKey(date: Date) {
 function dayCellClassNames(arg: { date: Date }) {
   const dateKey = getDateKey(arg.date)
   const classes: string[] = []
-
   if (!selectedAccommodation.value) return classes
-
   if (isDateUnavailable(dateKey)) {
     classes.push('rp-day-unavailable')
     return classes
   }
-
   classes.push('rp-day-available')
-
-  if (checkInDate.value && dateKey === checkInDate.value) {
-    classes.push('rp-day-selected-start')
-  }
-
-  if (checkOutDate.value && dateKey === checkOutDate.value) {
-    classes.push('rp-day-selected-end')
-  }
-
+  if (checkInDate.value && dateKey === checkInDate.value) classes.push('rp-day-selected-start')
+  if (checkOutDate.value && dateKey === checkOutDate.value) classes.push('rp-day-selected-end')
   if (checkInDate.value && checkOutDate.value && dateKey > checkInDate.value && dateKey < checkOutDate.value) {
     classes.push('rp-day-selected-middle')
   }
-
   return classes
 }
 
@@ -417,13 +498,11 @@ function confirmAddToPlan() {
     planModalError.value = 'Selecciona un plan.'
     return
   }
-
   const trip = store.trips.find(t => t.id === selectedPlanId.value)
   if (!trip) {
     planModalError.value = 'No se encontro el plan seleccionado.'
     return
   }
-
   const start = new Date(trip.startDate)
   const checkIn = new Date(checkInDate.value)
   const msDiff = checkIn.getTime() - start.getTime()
@@ -460,22 +539,41 @@ watch(
 </script>
 
 <style scoped>
-:deep(.modal-enter-active),
-:deep(.modal-leave-active) {
+.modal-enter-active,
+.modal-leave-active {
   transition: all 0.2s ease;
 }
-
-:deep(.modal-enter-from),
-:deep(.modal-leave-to) {
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
   transform: scale(0.98);
 }
 
+/* Dark mode vars */
+.bg-rp-bg { background-color: var(--rp-bg); }
+.bg-rp-surface { background-color: var(--rp-surface); }
+.bg-rp-surface-2 { background-color: var(--rp-surface-2); }
+.border-rp-border { border-color: var(--rp-border); }
+.text-rp-text { color: var(--rp-text); }
+.text-rp-muted { color: var(--rp-muted); }
+.text-rp-accent { color: var(--rp-accent); }
+.bg-rp-accent { background-color: var(--rp-accent); }
+.border-rp-accent\/30 { border-color: rgba(249,115,22,0.3); }
+.border-rp-accent\/40 { border-color: rgba(249,115,22,0.4); }
+.hover\:border-rp-accent\/40:hover { border-color: rgba(249,115,22,0.4); }
+.hover\:border-rp-accent\/30:hover { border-color: rgba(249,115,22,0.3); }
+.hover\:text-rp-accent:hover { color: var(--rp-accent); }
+.hover\:bg-rp-surface-2:hover { background-color: var(--rp-surface-2); }
+.from-rp-surface\/80 { --tw-gradient-from: rgba(17,17,24,0.8); }
+.to-transparent { --tw-gradient-to: transparent; }
+
+/* Calendar dark mode shell */
 :deep(.rp-calendar-shell .fc) {
   --rp-orange: #f97316;
-  --rp-orange-soft: #fed7aa;
-  --rp-orange-divider: #f6c792;
+  --rp-orange-soft: rgba(249,115,22,0.15);
+  --rp-orange-divider: rgba(249,115,22,0.3);
   --rp-range-inset: 6px;
+  font-family: 'DM Sans', sans-serif;
 }
 
 :deep(.rp-calendar-shell .fc-header-toolbar) {
@@ -487,13 +585,13 @@ watch(
   font-size: 1rem;
   font-weight: 800;
   text-transform: capitalize;
-  color: #374151;
+  color: var(--rp-text, #374151);
 }
 
 :deep(.rp-calendar-shell .fc-button) {
-  background: #fff !important;
-  border: 1px solid #e5e7eb !important;
-  color: #6b7280 !important;
+  background: var(--rp-surface-2, #fff) !important;
+  border: 1px solid var(--rp-border, #e5e7eb) !important;
+  color: var(--rp-muted, #6b7280) !important;
   border-radius: 10px !important;
   box-shadow: none !important;
   padding: 0.2rem 0.5rem !important;
@@ -507,7 +605,7 @@ watch(
 
 :deep(.rp-calendar-shell .fc-col-header-cell-cushion) {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--rp-muted, #9ca3af);
   font-weight: 700;
   text-transform: capitalize;
 }
@@ -539,26 +637,28 @@ watch(
   border-radius: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--rp-text, #4b5563);
 }
 
 :deep(.rp-calendar-shell .fc-day-other .fc-daygrid-day-number) {
-  color: #d1d5db;
+  color: var(--rp-muted, #d1d5db);
+  opacity: 0.4;
 }
 
 :deep(.rp-calendar-shell .rp-day-available .fc-daygrid-day-number) {
-  color: #374151;
+  color: var(--rp-text, #374151);
 }
 
 :deep(.rp-calendar-shell .rp-day-unavailable .fc-daygrid-day-number) {
-  color: #d1d5db;
+  color: var(--rp-muted, #d1d5db);
   text-decoration: line-through;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 :deep(.rp-calendar-shell .rp-day-selected-middle .fc-daygrid-day-number) {
   background: transparent;
-  color: #ea580c;
+  color: var(--rp-accent);
   font-weight: 700;
 }
 

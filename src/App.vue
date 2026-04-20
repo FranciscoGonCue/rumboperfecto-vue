@@ -1,30 +1,33 @@
 <template>
   <div
     class="relative min-h-screen overflow-x-visible transition-colors duration-300"
-    :class="store.isDark ? 'bg-slate-950 text-slate-100' : 'bg-white text-gray-900'"
+    :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-white text-gray-900'"
   >
     <div class="flex flex-col min-h-screen">
       <!-- RESPONSIVE HEADER -->
       <header
-        class="sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm transition-colors duration-300"
-        :class="store.isDark ? 'bg-slate-900/95 border-b border-slate-700' : 'bg-white/95 border-b border-orange-100'"
+        class="sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between transition-colors duration-300"
+        :class="store.isDark
+          ? 'bg-rp-surface/95 border-b border-rp-border'
+          : 'bg-white/95 border-b border-orange-100 shadow-sm'"
       >
         <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 bg-rumbo-orange rounded-xl flex items-center justify-center text-white shadow-lg rotate-3">
+          <div class="w-10 h-10 bg-rp-accent rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-900/30 rotate-3">
             <Plane :size="22" class="-rotate-12" />
           </div>
           <div>
-            <h1 class="text-xl font-black tracking-tight text-rumbo-orange uppercase leading-none">
+            <h1 class="text-xl font-black tracking-tight text-rp-accent uppercase leading-none">
               RumboPerfecto
             </h1>
-            <p class="text-[10px] font-bold uppercase tracking-widest mt-1" :class="store.isDark ? 'text-slate-400' : 'text-gray-400'">
+            <p class="text-[10px] font-bold uppercase tracking-widest mt-1"
+               :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
               Travel Planner
             </p>
           </div>
         </div>
 
         <!-- Desktop Navigation (Top) -->
-        <nav class="hidden lg:flex items-center space-x-8">
+        <nav class="hidden lg:flex items-center space-x-1">
           <DesktopNavLink
             :active="store.currentView === 'inicio'"
             :dark="store.isDark"
@@ -48,29 +51,35 @@
           />
         </nav>
 
-        <div class="flex items-center space-x-4">
-          <!-- Theme Toggle Button -->
+        <div class="flex items-center space-x-3">
           <ThemeToggle />
-          
-          <button class="lg:hidden p-2 text-rumbo-orange rounded-full" :class="store.isDark ? 'bg-slate-800' : 'bg-orange-50'">
+          <button
+            class="lg:hidden p-2 text-rp-accent rounded-full transition-colors"
+            :class="store.isDark ? 'bg-rp-surface-2' : 'bg-orange-50'"
+          >
             <Plus :size="20" />
           </button>
-          <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-rumbo-orange/20 shadow-inner" :class="store.isDark ? 'bg-slate-800' : 'bg-orange-100'">
-            <img :src="store.user.avatar" alt="avatar" />
+          <div
+            class="w-9 h-9 rounded-full overflow-hidden border-2 border-rp-accent/30 shadow-inner ring-1 ring-rp-accent/10"
+            :class="store.isDark ? 'bg-rp-surface-2' : 'bg-orange-100'"
+          >
+            <img :src="store.user.avatar" alt="avatar" class="w-full h-full object-cover" />
           </div>
         </div>
       </header>
 
-      <!-- MAIN CONTENT AREA (sin Transition: evita contenido con opacidad 0 colgada) -->
+      <!-- MAIN CONTENT AREA -->
       <main class="flex-1 w-full max-w-none mx-0 min-h-[50vh]">
         <component :is="currentViewComponent" :key="store.currentView" />
       </main>
 
       <!-- MOBILE/TABLET BOTTOM NAVIGATION -->
-      <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-6 pb-6">
+      <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-5 pb-5">
         <div
-          class="backdrop-blur-xl rounded-[35px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex items-center justify-around h-20 px-2 max-w-md mx-auto transition-colors duration-300"
-          :class="store.isDark ? 'bg-slate-900/95 border border-slate-700' : 'bg-white/95 border border-orange-50'"
+          class="backdrop-blur-xl rounded-[30px] flex items-center justify-around h-[68px] px-2 max-w-md mx-auto transition-colors duration-300"
+          :class="store.isDark
+            ? 'bg-rp-surface/98 border border-rp-border shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+            : 'bg-white/98 border border-orange-50 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'"
         >
           <NavButton
             :is-active="store.currentView === 'inicio'"
@@ -130,18 +139,43 @@ onMounted(async () => {
 
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800;900&display=swap');
+
+:root {
+  --rp-bg: #0a0a0f;
+  --rp-surface: #111118;
+  --rp-surface-2: #18181f;
+  --rp-border: rgba(255,255,255,0.07);
+  --rp-text: #e8e8f0;
+  --rp-muted: #5a5a70;
+  --rp-accent: #f97316;
+  --rp-accent-glow: rgba(249,115,22,0.15);
+}
 
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  background-color: var(--rp-bg);
 }
+
+.bg-rp-bg { background-color: var(--rp-bg); }
+.bg-rp-surface { background-color: var(--rp-surface); }
+.bg-rp-surface-2 { background-color: var(--rp-surface-2); }
+.border-rp-border { border-color: var(--rp-border); }
+.text-rp-text { color: var(--rp-text); }
+.text-rp-muted { color: var(--rp-muted); }
+.text-rp-accent { color: var(--rp-accent); }
+.bg-rp-accent { background-color: var(--rp-accent); }
+.bg-rp-accent-glow { background-color: var(--rp-accent-glow); }
+.ring-rp-accent\/10 { --tw-ring-color: rgba(249,115,22,0.1); }
+.border-rp-accent\/30 { border-color: rgba(249,115,22,0.3); }
+.shadow-orange-900\/30 { --tw-shadow-color: rgba(124,45,18,0.3); }
 
 html.map-expanded header {
   display: none;
