@@ -473,7 +473,9 @@ watch(
 
 :deep(.rp-calendar-shell .fc) {
   --rp-orange: #f97316;
-  --rp-orange-soft: #ffedd5;
+  --rp-orange-soft: #fed7aa;
+  --rp-orange-divider: #f6c792;
+  --rp-range-inset: 6px;
 }
 
 :deep(.rp-calendar-shell .fc-header-toolbar) {
@@ -556,11 +558,18 @@ watch(
 
 :deep(.rp-calendar-shell .rp-day-selected-middle .fc-daygrid-day-number) {
   background: transparent;
-  color: #9a3412;
+  color: #ea580c;
+  font-weight: 700;
 }
 
 :deep(.rp-calendar-shell .rp-day-selected-middle .fc-daygrid-day-frame) {
   background: var(--rp-orange-soft);
+  clip-path: inset(var(--rp-range-inset) 0 var(--rp-range-inset) 0);
+  box-shadow:
+    -1px 0 0 var(--rp-orange-soft),
+    1px 0 0 var(--rp-orange-soft),
+    inset 1px 0 0 var(--rp-orange-divider),
+    inset -1px 0 0 var(--rp-orange-divider);
 }
 
 :deep(.rp-calendar-shell .rp-day-selected-start .fc-daygrid-day-number),
@@ -572,7 +581,17 @@ watch(
 
 :deep(.rp-calendar-shell .rp-day-selected-start .fc-daygrid-day-frame),
 :deep(.rp-calendar-shell .rp-day-selected-end .fc-daygrid-day-frame) {
-  background: var(--rp-orange-soft);
+  clip-path: inset(var(--rp-range-inset) 0 var(--rp-range-inset) 0);
+}
+
+:deep(.rp-calendar-shell .rp-day-selected-start .fc-daygrid-day-frame) {
+  background: linear-gradient(to right, transparent 0 42%, var(--rp-orange-soft) 42% 100%);
+  box-shadow: 1px 0 0 var(--rp-orange-soft), inset -1px 0 0 var(--rp-orange-divider);
+}
+
+:deep(.rp-calendar-shell .rp-day-selected-end .fc-daygrid-day-frame) {
+  background: linear-gradient(to right, var(--rp-orange-soft) 0 58%, transparent 58% 100%);
+  box-shadow: -1px 0 0 var(--rp-orange-soft), inset 1px 0 0 var(--rp-orange-divider);
 }
 
 :deep(.rp-calendar-shell .rp-day-selected-start .fc-daygrid-day-number) {
