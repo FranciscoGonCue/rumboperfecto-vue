@@ -472,6 +472,7 @@ const mapExpanded = ref(false)
 const currentMapView = ref('world')
 const showMobileSidebar = ref(false)
 const isMobile = ref(false)
+const isExitingMapMode = ref(false)
 
 watch(mapExpanded, (expanded) => {
   document.documentElement.classList.toggle('map-expanded', expanded)
@@ -575,6 +576,7 @@ function openAccommodationDetail(id: string) {
 }
 
 function exitMapMode() {
+  isExitingMapMode.value = true
   mapExpanded.value = false
   showMobileSidebar.value = false
   
@@ -583,6 +585,10 @@ function exitMapMode() {
     setTimeout(() => {
       map?.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
       map?.invalidateSize()
+      // Re-enable map expansion listeners after transition completes
+      setTimeout(() => {
+        isExitingMapMode.value = false
+      }, 1000)
     }, 750)
   }
 }
@@ -723,19 +729,19 @@ function initMap() {
   // Detectar interacción con el mapa para expandirlo (solo desktop)
   if (!isMobile.value) {
     map.on('movestart', () => {
-      if (!mapExpanded.value) {
+      if (!mapExpanded.value && !isExitingMapMode.value) {
         mapExpanded.value = true
       }
     })
 
     map.on('zoomstart', () => {
-      if (!mapExpanded.value) {
+      if (!mapExpanded.value && !isExitingMapMode.value) {
         mapExpanded.value = true
       }
     })
 
     map.on('click', () => {
-      if (!mapExpanded.value) {
+      if (!mapExpanded.value && !isExitingMapMode.value) {
         mapExpanded.value = true
       }
     })
