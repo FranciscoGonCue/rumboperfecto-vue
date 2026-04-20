@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { activitiesApi, authApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
-import type { Activity, Trip, User } from '@/types'
+import type { Activity, Trip, User, View } from '@/types'
 
 const THEME_STORAGE_KEY = 'rumbo_theme'
 
@@ -15,7 +15,7 @@ const GUEST_USER: User = {
 }
 
 export const useAppStore = defineStore('app', () => {
-  const currentView = ref<'inicio' | 'plan' | 'perfil'>('inicio')
+  const currentView = ref<View>('inicio')
   const theme = ref<'light' | 'dark'>('light')
   const trips = ref<Trip[]>([])
   const user = ref<User>({ ...GUEST_USER })
@@ -30,12 +30,22 @@ export const useAppStore = defineStore('app', () => {
   const isAuthenticated = computed(() => user.value.isAuthenticated)
   const isDark = computed(() => theme.value === 'dark')
 
-  function setCurrentView(view: 'inicio' | 'plan' | 'perfil'): void {
+  function setCurrentView(view: View): void {
     currentView.value = view
   }
 
   function setSelectedAccommodationId(id: string | null): void {
     selectedAccommodationId.value = id
+  }
+
+  function openAccommodationDetail(id: string): void {
+    selectedAccommodationId.value = id
+    currentView.value = 'alojamiento'
+  }
+
+  function closeAccommodationDetail(): void {
+    selectedAccommodationId.value = null
+    currentView.value = 'inicio'
   }
 
   function applyThemeToDom(nextTheme: 'light' | 'dark'): void {
@@ -227,6 +237,8 @@ export const useAppStore = defineStore('app', () => {
     isDark,
     setCurrentView,
     setSelectedAccommodationId,
+    openAccommodationDetail,
+    closeAccommodationDetail,
     setTheme,
     toggleTheme,
     loadThemeFromStorage,
