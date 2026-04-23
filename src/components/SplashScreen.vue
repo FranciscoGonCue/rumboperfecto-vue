@@ -10,7 +10,6 @@
     >
       <!-- Animated Plane -->
       <div
-        ref="planeRef"
         class="w-48 h-48 drop-shadow-[0_25px_30px_rgba(0,0,0,0.3)]"
         :style="planeStyle"
       >
@@ -56,13 +55,13 @@ const emit = defineEmits<{
   complete: []
 }>()
 
-const planeRef = ref<HTMLElement>()
 const animationProgress = ref(0)
 const sloganOpacity = ref(0)
 
 const planeStyle = computed(() => {
   const progress = animationProgress.value
-  const x = -130 + (260 * progress) // From -130vw to 130vw
+  // Translate relative to the screen center; keep it visible from the start.
+  const x = -45 + (90 * progress) // From -45vw to 45vw
   const y = [0, -50, 40, -40, 0]
   const rotate = [0, -8, 4, -4, 0]
   
@@ -73,19 +72,20 @@ const planeStyle = computed(() => {
 
   return {
     transform: `translateX(${x}vw) translateY(${currentY}px) rotate(${currentRotate}deg)`,
-    transition: 'transform 0.05s linear'
+    transition: 'transform 0.05s linear',
+    willChange: 'transform',
   }
 })
 
 const sloganStyle = computed(() => ({
   opacity: sloganOpacity.value,
   transform: `translateY(${40 - sloganOpacity.value * 40}px)`,
-  transition: 'all 1.2s ease-out'
+  transition: 'all 0.6s ease-out'
 }))
 
 onMounted(() => {
   let startTime: number | null = null
-  const duration = 5500 // 5.5 seconds
+  const duration = 1600 // ~2s total including fade-out
 
   const animate = (timestamp: number) => {
     if (!startTime) startTime = timestamp
@@ -94,9 +94,9 @@ onMounted(() => {
 
     animationProgress.value = progress
 
-    // Show slogan after 1.5s
-    if (elapsed > 1500) {
-      sloganOpacity.value = Math.min((elapsed - 1500) / 1200, 1)
+    // Show slogan quickly (matches faster splash)
+    if (elapsed > 350) {
+      sloganOpacity.value = Math.min((elapsed - 350) / 450, 1)
     }
 
     if (progress < 1) {
@@ -104,7 +104,7 @@ onMounted(() => {
     } else {
       setTimeout(() => {
         emit('complete')
-      }, 300)
+      }, 100)
     }
   }
 
@@ -117,8 +117,8 @@ function onBeforeLeave(el: Element) {
 
 function onLeave(el: Element, done: () => void) {
   const element = el as HTMLElement
-  element.style.transition = 'opacity 1s ease-in-out'
+  element.style.transition = 'opacity 0.4s ease-in-out'
   element.style.opacity = '0'
-  setTimeout(done, 1000)
+  setTimeout(done, 400)
 }
 </script>

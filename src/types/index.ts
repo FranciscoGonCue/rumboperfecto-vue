@@ -13,7 +13,14 @@ export interface Trip {
   activities: Record<number, Activity[]>
 }
 
-export type View = 'inicio' | 'plan' | 'perfil' | 'alojamiento'
+export type View =
+  | 'inicio'
+  | 'plan'
+  | 'perfil'
+  | 'alojamiento'
+  | 'transporte'
+  | 'actividad'
+  | 'restaurante'
 
 export interface User {
   id: string

@@ -38,6 +38,9 @@ export const useAppStore = defineStore('app', () => {
   const trips = ref<Trip[]>(loadLocalTrips())
   const user = ref<User>({ ...GUEST_USER })
   const selectedAccommodationId = ref<string | null>(null)
+  const selectedTransportId = ref<string | null>(null)
+  const selectedActivityId = ref<string | null>(null)
+  const selectedRestaurantId = ref<string | null>(null)
 
   const bootstrapping = ref(false)
   const tripsLoading = ref(false)
@@ -63,6 +66,36 @@ export const useAppStore = defineStore('app', () => {
 
   function closeAccommodationDetail(): void {
     selectedAccommodationId.value = null
+    currentView.value = 'inicio'
+  }
+
+  function openTransportDetail(id: string): void {
+    selectedTransportId.value = id
+    currentView.value = 'transporte'
+  }
+
+  function closeTransportDetail(): void {
+    selectedTransportId.value = null
+    currentView.value = 'inicio'
+  }
+
+  function openActivityDetail(id: string): void {
+    selectedActivityId.value = id
+    currentView.value = 'actividad'
+  }
+
+  function closeActivityDetail(): void {
+    selectedActivityId.value = null
+    currentView.value = 'inicio'
+  }
+
+  function openRestaurantDetail(id: string): void {
+    selectedRestaurantId.value = id
+    currentView.value = 'restaurante'
+  }
+
+  function closeRestaurantDetail(): void {
+    selectedRestaurantId.value = null
     currentView.value = 'inicio'
   }
 
@@ -265,6 +298,9 @@ export const useAppStore = defineStore('app', () => {
   return {
     currentView,
     selectedAccommodationId,
+    selectedTransportId,
+    selectedActivityId,
+    selectedRestaurantId,
     theme,
     trips,
     user,
@@ -279,6 +315,12 @@ export const useAppStore = defineStore('app', () => {
     setSelectedAccommodationId,
     openAccommodationDetail,
     closeAccommodationDetail,
+    openTransportDetail,
+    closeTransportDetail,
+    openActivityDetail,
+    closeActivityDetail,
+    openRestaurantDetail,
+    closeRestaurantDetail,
     setTheme,
     toggleTheme,
     loadThemeFromStorage,

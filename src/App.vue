@@ -3,6 +3,7 @@
     class="relative min-h-screen overflow-x-visible transition-colors duration-300"
     :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-white text-gray-900'"
   >
+    <SplashScreen :isVisible="showSplash" @complete="showSplash = false" />
     <div class="flex flex-col min-h-screen">
       <!-- RESPONSIVE HEADER -->
       <header
@@ -70,7 +71,30 @@
 
       <!-- MAIN CONTENT AREA -->
       <main class="flex-1 w-full max-w-none mx-0 min-h-[50vh]">
-        <component :is="currentViewComponent" :key="store.currentView" />
+        <AccommodationDetailView
+          v-if="store.currentView === 'alojamiento'"
+          :key="store.currentView"
+        />
+        <TransportDetailView
+          v-else-if="store.currentView === 'transporte'"
+          :key="store.currentView + ':' + (store.selectedTransportId ?? 'default')"
+          :transport="selectedTransport"
+        />
+        <ActivityDetailView
+          v-else-if="store.currentView === 'actividad'"
+          :key="store.currentView + ':' + (store.selectedActivityId ?? 'default')"
+          :activity="selectedActivity"
+        />
+        <RestaurantDetailView
+          v-else-if="store.currentView === 'restaurante'"
+          :key="store.currentView + ':' + (store.selectedRestaurantId ?? 'default')"
+          :restaurant="selectedRestaurant"
+        />
+        <component
+          v-else
+          :is="currentViewComponent"
+          :key="store.currentView"
+        />
       </main>
 
       <!-- MOBILE/TABLET BOTTOM NAVIGATION -->
@@ -109,27 +133,46 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { Home, Calendar, User, Plane, Plus } from 'lucide-vue-next'
 import HomeView from '@/views/HomeView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
+import TransportDetailView from '@/views/TransportDetailView.vue'
+import ActivityDetailView from '@/views/ActivityDetailView.vue'
+import RestaurantDetailView from '@/views/RestaurantDetailView.vue'
 import DesktopNavLink from '@/components/DesktopNavLink.vue'
 import NavButton from '@/components/NavButton.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import SplashScreen from '@/components/SplashScreen.vue'
+import { transportsMock } from '@/mocks/transport'
+import { activitiesMock } from '@/mocks/activities'
+import { restaurantsMock } from '@/mocks/restaurants'
 
 const store = useAppStore()
+const showSplash = ref(true)
+
+const selectedTransport = computed(() => {
+  const id = store.selectedTransportId
+  return transportsMock.find((t) => t.id === id) ?? transportsMock[0]
+})
+
+const selectedActivity = computed(() => {
+  const id = store.selectedActivityId
+  return activitiesMock.find((a) => a.id === id) ?? activitiesMock[0]
+})
+
+const selectedRestaurant = computed(() => {
+  const id = store.selectedRestaurantId
+  return restaurantsMock.find((r) => r.id === id) ?? restaurantsMock[0]
+})
 
 const currentViewComponent = computed(() => {
-  const views = {
-    inicio: HomeView,
-    plan: PlannerView,
-    perfil: ProfileView,
-    alojamiento: AccommodationDetailView
-  }
-  return views[store.currentView] ?? HomeView
+  if (store.currentView === 'plan') return PlannerView
+  if (store.currentView === 'perfil') return ProfileView
+  return HomeView
 })
 
 onMounted(async () => {

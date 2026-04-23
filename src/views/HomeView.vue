@@ -324,7 +324,7 @@
                 :style="store.isDark
                   ? 'background: var(--rp-surface); border: 1px solid var(--rp-border); box-shadow: 0 8px 32px rgba(0,0,0,0.4);'
                   : 'background: white; border: 1px solid #f8fafc; box-shadow: 0 8px 24px rgba(0,0,0,0.06);'"
-                @click="openAccommodationDetail(item.id)"
+                @click="openItemDetail(item)"
               >
                 <div class="relative h-56 overflow-hidden">
                   <img
@@ -374,7 +374,7 @@
                       :class="store.isDark
                         ? 'bg-rp-surface-2 text-rp-muted group-hover:bg-rp-accent group-hover:text-white'
                         : 'bg-gray-50 group-hover:bg-orange-500 group-hover:text-white'"
-                      @click.stop="openAccommodationDetail(item.id)"
+                      @click.stop="openItemDetail(item)"
                     >
                       <Compass :size="22" />
                     </button>
@@ -678,10 +678,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { Search, Hotel, Compass, Utensils, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu, Calendar, Users, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Search, Hotel, Compass, Utensils, Plane, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu, Calendar, Users, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { accommodationsMock } from '@/mocks/accommodations'
+import { activitiesMock } from '@/mocks/activities'
+import { restaurantsMock } from '@/mocks/restaurants'
+import { transportsMock } from '@/mocks/transport'
 import { useAppStore } from '@/stores/app'
 
 const categories = [
@@ -702,6 +705,12 @@ const categories = [
     label: 'Comida',
     color: 'bg-orange-50 text-rumbo-orange',
     activeColor: 'bg-orange-200 text-orange-700'
+  },
+  {
+    icon: Plane,
+    label: 'Transporte',
+    color: 'bg-sky-50 text-sky-600',
+    activeColor: 'bg-sky-200 text-sky-800'
   }
 ]
 
@@ -711,12 +720,38 @@ const mapViews = [
   { id: 'clusters', label: 'Agrupados', description: 'Por región', icon: Layers }
 ]
 
-const feedItems = accommodationsMock.map((acc, index) => ({
+type FeedCategory = 'Alojamiento' | 'Aventuras' | 'Comida' | 'Transporte'
+type FeedKind = 'accommodation' | 'activity' | 'restaurant' | 'transport'
+
+type FeedItem = {
+  id: string
+  kind: FeedKind
+  title: string
+  price: string
+  rating: number
+  category: FeedCategory
+  img: string
+  city: string
+  country: string
+  lat: number
+  lng: number
+  availableFrom?: string
+  availableTo?: string
+  unavailableDates?: string[]
+}
+
+type AccommodationFeedItem = FeedItem & {
+  kind: 'accommodation'
+  availableFrom: string
+  availableTo: string
+  unavailableDates: string[]
+}
+
+const accommodationItems: FeedItem[] = accommodationsMock.map((acc, index) => ({
   id: acc.id,
+  kind: 'accommodation',
   title: acc.title,
   price: `${acc.currency} ${acc.pricePerNight}`,
-  pricePerNight: acc.pricePerNight,
-  currency: acc.currency,
   rating: acc.rating,
   category: 'Alojamiento',
   img: acc.image,
@@ -728,6 +763,64 @@ const feedItems = accommodationsMock.map((acc, index) => ({
   lat: 40.4168 + (index * 1.25),
   lng: -3.7038 + (index * 1.25)
 }))
+
+const activityItems: FeedItem[] = activitiesMock.map((act, index) => ({
+  id: act.id,
+  kind: 'activity',
+  title: act.title,
+  price: `${act.currency} ${act.pricePerPerson}`,
+  rating: act.rating,
+  category: 'Aventuras',
+  img: act.image,
+  city: act.city,
+  country: act.category,
+  lat: 41.0 + (index * 0.8),
+  lng: -2.0 + (index * 0.9)
+}))
+
+const restaurantItems: FeedItem[] = restaurantsMock.map((r, index) => ({
+  id: r.id,
+  kind: 'restaurant',
+  title: r.name,
+  price: `${r.currency} ${r.avgPricePerPerson}`,
+  rating: r.rating,
+  category: 'Comida',
+  img: r.image,
+  city: r.city,
+  country: r.cuisine,
+  lat: 40.2 + (index * 0.7),
+  lng: -4.3 + (index * 0.8)
+}))
+
+const transportImageByType: Record<string, string> = {
+  Vuelo: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1800&q=80',
+  Tren: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1800&q=80',
+  Bus: 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1800&q=80',
+  Coche: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1800&q=80',
+  Ferry: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1800&q=80',
+  Bicicleta: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1800&q=80',
+}
+
+const transportItems: FeedItem[] = transportsMock.map((t, index) => ({
+  id: t.id,
+  kind: 'transport',
+  title: `${t.origin} → ${t.destination}`,
+  price: `${t.currency} ${t.pricePerTicket}`,
+  rating: t.rating,
+  category: 'Transporte',
+  img: transportImageByType[t.type] ?? transportImageByType.Vuelo,
+  city: t.origin,
+  country: t.destination,
+  lat: 39.5 + (index * 1.0),
+  lng: -1.0 + (index * 1.1),
+}))
+
+const feedItems: FeedItem[] = [
+  ...accommodationItems,
+  ...activityItems,
+  ...restaurantItems,
+  ...transportItems,
+]
 
 const store = useAppStore()
 const destinationQuery = ref('')
@@ -766,7 +859,10 @@ const filteredItems = computed(() => {
   }
 
   if (checkIn.value && checkOut.value) {
-    items = items.filter(item => isAccommodationAvailable(item, checkIn.value, checkOut.value))
+    items = items.filter((item) => {
+      if (item.kind !== 'accommodation') return true
+      return isAccommodationAvailable(item as AccommodationFeedItem, checkIn.value, checkOut.value)
+    })
   }
 
   return items
@@ -847,8 +943,20 @@ function toggleFavorite(id: string) {
   }
 }
 
-function openAccommodationDetail(id: string) {
-  store.openAccommodationDetail(id)
+function openItemDetail(item: FeedItem) {
+  if (item.kind === 'accommodation') {
+    store.openAccommodationDetail(item.id)
+    return
+  }
+  if (item.kind === 'activity') {
+    store.openActivityDetail(item.id)
+    return
+  }
+  if (item.kind === 'restaurant') {
+    store.openRestaurantDetail(item.id)
+    return
+  }
+  store.openTransportDetail(item.id)
 }
 
 function exitMapMode() {
@@ -954,7 +1062,7 @@ function toISODate(date: Date): string {
 }
 
 function isAccommodationAvailable(
-  item: (typeof feedItems)[number],
+  item: AccommodationFeedItem,
   inDateIso: string,
   outDateIso: string
 ): boolean {
@@ -967,7 +1075,7 @@ function isAccommodationAvailable(
   if (checkInDate < availableFrom) return false
   if (checkOutDate > addDays(availableTo, 1)) return false
 
-  const blocked = new Set(item.unavailableDates)
+  const blocked = new Set(item.unavailableDates ?? [])
   for (let d = new Date(checkInDate); d < checkOutDate; d = addDays(d, 1)) {
     if (blocked.has(toISODate(d))) return false
   }
