@@ -250,4 +250,71 @@ export const tasksAPI = {
   delete: (id: number) => api.delete(`/tasks/${id}/`),
 }
 
+// ── Catálogo de Servicios ────────────────────────────────────────────────────
+
+export interface TipoServicioAPI {
+  id_tipo: number
+  nombre_tipo: string
+  icono: string
+}
+
+export interface DetalleAlojamientoAPI {
+  estrellas: number | null
+  hora_checkin: string | null
+  hora_checkout: string | null
+  servicios_extra: string | null
+}
+
+export interface DetalleTransporteAPI {
+  ciudad_origen: string | null
+  ciudad_destino: string | null
+  compania: string | null
+  codigo_vuelo: string | null
+  duracion_minutos: number | null
+}
+
+export interface DetalleRestauracionAPI {
+  tipo_cocina: string | null
+  es_vegano: boolean | null
+  precio_medio: number | null
+  requiere_reserva: boolean | null
+}
+
+export interface DetalleActividadAPI {
+  duracion_estimada: number | null
+  aforo_maximo: number | null
+  horario_apertura: string | null
+  guia_incluido: boolean | null
+}
+
+export interface Servicio {
+  id_servicio: number
+  tipo: TipoServicioAPI | null
+  nombre: string | null
+  descripcion: string | null
+  precio_base: number | null
+  ubicacion_lat: number | null
+  ubicacion_lon: number | null
+  imagen_url: string | null
+  disponible: boolean | null
+  detalle_alojamiento: DetalleAlojamientoAPI | null
+  detalle_transporte: DetalleTransporteAPI | null
+  detalle_restauracion: DetalleRestauracionAPI | null
+  detalle_actividad: DetalleActividadAPI | null
+}
+
+// Cliente sin credenciales para endpoints públicos (evita CORS preflight complejo)
+const publicClient = axios.create({
+  baseURL: (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api',
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+  withCredentials: false,
+})
+
+export const serviciosApi = {
+  async getAll(): Promise<Servicio[]> {
+    const response = await publicClient.get<Servicio[]>('/servicios/')
+    return response.data
+  },
+}
+
 export default api

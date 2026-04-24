@@ -315,7 +315,20 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <!-- Skeleton carga -->
+          <div v-if="isLoadingServicios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div v-for="n in 6" :key="n" class="rounded-[32px] overflow-hidden animate-pulse"
+                 :style="store.isDark ? 'background: var(--rp-surface); border: 1px solid var(--rp-border);' : 'background: #f8fafc;'">
+              <div class="h-56" :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-200'" />
+              <div class="p-6 space-y-3">
+                <div class="h-4 rounded-full w-3/4" :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-200'" />
+                <div class="h-3 rounded-full w-1/2" :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-200'" />
+                <div class="h-6 rounded-full w-1/3 mt-4" :class="store.isDark ? 'bg-rp-surface-2' : 'bg-gray-200'" />
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <TransitionGroup name="feed">
               <div
                 v-for="item in filteredItems"
@@ -382,7 +395,7 @@
                 </div>
               </div>
             </TransitionGroup>
-          </div>
+          </div><!-- fin v-else grid -->
         </div>
       </div>
     </div>
@@ -681,41 +694,18 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Hotel, Compass, Utensils, Plane, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu, Calendar, Users, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { accommodationsMock } from '@/mocks/accommodations'
-import { activitiesMock } from '@/mocks/activities'
-import { restaurantsMock } from '@/mocks/restaurants'
-import { transportsMock } from '@/mocks/transport'
 import { useAppStore } from '@/stores/app'
+import { type Servicio } from '@/services/api'
 
 const categories = [
-  {
-    icon: Hotel,
-    label: 'Alojamiento',
-    color: 'bg-blue-50 text-blue-500',
-    activeColor: 'bg-blue-200 text-blue-700'
-  },
-  {
-    icon: Compass,
-    label: 'Aventuras',
-    color: 'bg-emerald-50 text-emerald-500',
-    activeColor: 'bg-emerald-200 text-emerald-700'
-  },
-  {
-    icon: Utensils,
-    label: 'Comida',
-    color: 'bg-orange-50 text-rumbo-orange',
-    activeColor: 'bg-orange-200 text-orange-700'
-  },
-  {
-    icon: Plane,
-    label: 'Transporte',
-    color: 'bg-sky-50 text-sky-600',
-    activeColor: 'bg-sky-200 text-sky-800'
-  }
+  { icon: Hotel,   label: 'Alojamiento', color: 'bg-blue-50 text-blue-500',      activeColor: 'bg-blue-200 text-blue-700' },
+  { icon: Compass, label: 'Aventuras',   color: 'bg-emerald-50 text-emerald-500', activeColor: 'bg-emerald-200 text-emerald-700' },
+  { icon: Utensils,label: 'Comida',      color: 'bg-orange-50 text-orange-500',   activeColor: 'bg-orange-200 text-orange-700' },
+  { icon: Plane,   label: 'Transporte',  color: 'bg-sky-50 text-sky-600',         activeColor: 'bg-sky-200 text-sky-800' },
 ]
 
 const mapViews = [
-  { id: 'world', label: 'Vista Mundial', description: 'Todos los destinos', icon: Globe },
+  { id: 'world', label: 'Vista España', description: 'Todos los destinos', icon: Globe },
   { id: 'routes', label: 'Rutas', description: 'Conectar destinos', icon: Navigation },
   { id: 'clusters', label: 'Agrupados', description: 'Por región', icon: Layers }
 ]
@@ -747,80 +737,64 @@ type AccommodationFeedItem = FeedItem & {
   unavailableDates: string[]
 }
 
-const accommodationItems: FeedItem[] = accommodationsMock.map((acc, index) => ({
-  id: acc.id,
-  kind: 'accommodation',
-  title: acc.title,
-  price: `${acc.currency} ${acc.pricePerNight}`,
-  rating: acc.rating,
-  category: 'Alojamiento',
-  img: acc.image,
-  city: acc.city,
-  country: acc.country,
-  availableFrom: acc.availableFrom,
-  availableTo: acc.availableTo,
-  unavailableDates: acc.unavailableDates,
-  lat: 40.4168 + (index * 1.25),
-  lng: -3.7038 + (index * 1.25)
-}))
+// ── Configuración del mapa para España ──────────────────────────────────────
+const spainCenter: [number, number] = [40.4168, -3.7038]
+const spainZoom = 6
 
-const activityItems: FeedItem[] = activitiesMock.map((act, index) => ({
-  id: act.id,
-  kind: 'activity',
-  title: act.title,
-  price: `${act.currency} ${act.pricePerPerson}`,
-  rating: act.rating,
-  category: 'Aventuras',
-  img: act.image,
-  city: act.city,
-  country: act.category,
-  lat: 41.0 + (index * 0.8),
-  lng: -2.0 + (index * 0.9)
-}))
-
-const restaurantItems: FeedItem[] = restaurantsMock.map((r, index) => ({
-  id: r.id,
-  kind: 'restaurant',
-  title: r.name,
-  price: `${r.currency} ${r.avgPricePerPerson}`,
-  rating: r.rating,
-  category: 'Comida',
-  img: r.image,
-  city: r.city,
-  country: r.cuisine,
-  lat: 40.2 + (index * 0.7),
-  lng: -4.3 + (index * 0.8)
-}))
-
-const transportImageByType: Record<string, string> = {
-  Vuelo: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1800&q=80',
-  Tren: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1800&q=80',
-  Bus: 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1800&q=80',
-  Coche: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1800&q=80',
-  Ferry: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1800&q=80',
-  Bicicleta: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1800&q=80',
+// ── Mapeo tipo API → FeedItem ────────────────────────────────────────────────
+const TIPO_MAP: Record<string, { category: FeedCategory; kind: FeedKind }> = {
+  'Alojamiento': { category: 'Alojamiento', kind: 'accommodation' },
+  'Transporte':  { category: 'Transporte',  kind: 'transport' },
+  'Restauración':{ category: 'Comida',      kind: 'restaurant' },
+  'Actividad':   { category: 'Aventuras',   kind: 'activity' },
 }
 
-const transportItems: FeedItem[] = transportsMock.map((t, index) => ({
-  id: t.id,
-  kind: 'transport',
-  title: `${t.origin} → ${t.destination}`,
-  price: `${t.currency} ${t.pricePerTicket}`,
-  rating: t.rating,
-  category: 'Transporte',
-  img: transportImageByType[t.type] ?? transportImageByType.Vuelo,
-  city: t.origin,
-  country: t.destination,
-  lat: 39.5 + (index * 1.0),
-  lng: -1.0 + (index * 1.1),
-}))
+const CATEGORY_STYLE: Record<FeedCategory, { color: string; bg: string; emoji: string; label: string }> = {
+  'Alojamiento': { color: '#3b82f6', bg: 'rgba(59,130,246,0.2)',  emoji: '🏨', label: 'Alojamiento' },
+  'Transporte':  { color: '#0ea5e9', bg: 'rgba(14,165,233,0.2)',  emoji: '✈️', label: 'Transporte' },
+  'Comida':      { color: '#f97316', bg: 'rgba(249,115,22,0.2)',  emoji: '🍽️', label: 'Restauración' },
+  'Aventuras':   { color: '#10b981', bg: 'rgba(16,185,129,0.2)',  emoji: '🧗', label: 'Actividad' },
+}
 
-const feedItems: FeedItem[] = [
-  ...accommodationItems,
-  ...activityItems,
-  ...restaurantItems,
-  ...transportItems,
-]
+function extractCity(nombre: string | null): string {
+  if (!nombre) return 'España'
+  if (nombre.includes('—')) return nombre.split('—').pop()!.trim().split(/[,(]/)[0].trim()
+  const words = nombre.trim().split(' ')
+  return words[words.length - 1] ?? 'España'
+}
+
+function servicioToFeedItem(s: Servicio): FeedItem | null {
+  if (s.ubicacion_lat == null || s.ubicacion_lon == null) return null
+  const tipo = s.tipo?.nombre_tipo ?? ''
+  const map = TIPO_MAP[tipo]
+  if (!map) return null
+
+  const precio = (s.precio_base ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 0 })
+  const rating =
+    s.detalle_alojamiento?.estrellas ??
+    (s.detalle_actividad?.guia_incluido != null ? 4.5 : 4.2)
+
+  return {
+    id: `api-${s.id_servicio}`,
+    kind: map.kind,
+    title: s.nombre ?? 'Sin nombre',
+    price: `${precio} €`,
+    rating,
+    category: map.category,
+    img: s.imagen_url ?? '',
+    city: extractCity(s.nombre),
+    country: 'España',
+    availableFrom: '2026-01-01',
+    availableTo: '2026-12-31',
+    unavailableDates: s.disponible === false ? ['2026-12-31'] : [],
+    lat: s.ubicacion_lat,
+    lng: s.ubicacion_lon,
+  }
+}
+
+// ── Estado reactivo ──────────────────────────────────────────────────────────
+const apiServiciosFeedItems = ref<FeedItem[]>([])
+const isLoadingServicios = ref(true)
 
 const store = useAppStore()
 const destinationQuery = ref('')
@@ -839,47 +813,42 @@ const mapCollapsed = ref(true)
 watch(mapExpanded, (expanded) => {
   document.documentElement.classList.toggle('map-expanded', expanded)
 })
-let map: L.Map | null = null
-const markers: L.Marker[] = []
 
-const europeCenter: [number, number] = [50, 10]
-const europeZoom = 4
+let map: L.Map | null = null
+type MapMarker = { marker: L.Marker; category: FeedCategory }
+const markers: MapMarker[] = []
 
 let touchStartY = 0
 let touchStartTime = 0
 
 const filteredItems = computed(() => {
-  let items = feedItems
+  let items = apiServiciosFeedItems.value
   if (selectedCategory.value) {
     items = items.filter(item => item.category === selectedCategory.value)
   }
   if (destinationQuery.value) {
     const query = destinationQuery.value.toLowerCase()
-    items = items.filter(item => item.title.toLowerCase().includes(query) || `${item.city} ${item.country}`.toLowerCase().includes(query))
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(query) ||
+      `${item.city} ${item.country}`.toLowerCase().includes(query)
+    )
   }
-
   if (checkIn.value && checkOut.value) {
-    items = items.filter((item) => {
+    items = items.filter(item => {
       if (item.kind !== 'accommodation') return true
       return isAccommodationAvailable(item as AccommodationFeedItem, checkIn.value, checkOut.value)
     })
   }
-
   return items
 })
 
-const nextTrip = computed(() => {
-  if (!store.trips?.length) return null
-  return store.trips[0] ?? null
-})
+const nextTrip = computed(() => store.trips?.[0] ?? null)
+const guestsLabel = computed(() => `${guests.value}`)
 
-const guestsLabel = computed(() => (guests.value === 1 ? '1' : `${guests.value}`))
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function checkIsMobile() {
   isMobile.value = window.innerWidth < 1024
-  if (isMobile.value) {
-    mapCollapsed.value = false
-  }
+  if (isMobile.value) mapCollapsed.value = false
 }
 
 function handleTouchStart(event: TouchEvent) {
@@ -890,39 +859,23 @@ function handleTouchStart(event: TouchEvent) {
 
 function handleTouchMove(event: TouchEvent) {
   if (mapExpanded.value || !isMobile.value) return
-  const currentY = event.touches[0].clientY
-  const deltaY = touchStartY - currentY
-  if (deltaY > 50) {
-    event.preventDefault()
-  }
+  const deltaY = touchStartY - event.touches[0].clientY
+  if (deltaY > 50) event.preventDefault()
 }
 
 function handleTouchEnd(event: TouchEvent) {
   if (mapExpanded.value || !isMobile.value) return
-  const touchEndY = event.changedTouches[0].clientY
-  const deltaY = touchStartY - touchEndY
+  const deltaY = touchStartY - event.changedTouches[0].clientY
   const deltaTime = Date.now() - touchStartTime
   if (deltaY > 50 && deltaTime < 300) {
     mapExpanded.value = true
-    setTimeout(() => {
-      map?.invalidateSize()
-    }, 750)
+    setTimeout(() => map?.invalidateSize(), 750)
   }
 }
 
-function toggleMobileSidebar() {
-  showMobileSidebar.value = !showMobileSidebar.value
-}
+function toggleMobileSidebar() { showMobileSidebar.value = !showMobileSidebar.value }
 
-function handleSearch() {
-  console.log('Search:', {
-    destination: destinationQuery.value,
-    checkIn: checkIn.value,
-    checkOut: checkOut.value,
-    guests: guests.value,
-    category: selectedCategory.value
-  })
-}
+function handleSearch() { /* búsqueda local en filteredItems */ }
 
 function filterByCategory(category: string) {
   if (selectedCategory.value === category) {
@@ -936,77 +889,45 @@ function filterByCategory(category: string) {
 
 function toggleFavorite(id: string) {
   const index = favorites.value.indexOf(id)
-  if (index > -1) {
-    favorites.value.splice(index, 1)
-  } else {
-    favorites.value.push(id)
-  }
+  if (index > -1) favorites.value.splice(index, 1)
+  else favorites.value.push(id)
 }
 
-function openItemDetail(item: FeedItem) {
-  if (item.kind === 'accommodation') {
-    store.openAccommodationDetail(item.id)
-    return
-  }
-  if (item.kind === 'activity') {
-    store.openActivityDetail(item.id)
-    return
-  }
-  if (item.kind === 'restaurant') {
-    store.openRestaurantDetail(item.id)
-    return
-  }
-  store.openTransportDetail(item.id)
-}
+function openItemDetail(_item: FeedItem) { /* detalle futuro */ }
 
 function exitMapMode() {
   isExitingMapMode.value = true
   mapExpanded.value = false
   showMobileSidebar.value = false
-  
   if (map) {
     setTimeout(() => {
-      map?.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
+      map?.setView(spainCenter, spainZoom, { animate: true, duration: 1 })
       map?.invalidateSize()
-      setTimeout(() => {
-        isExitingMapMode.value = false
-      }, 1000)
+      setTimeout(() => { isExitingMapMode.value = false }, 1000)
     }, 750)
   }
 }
 
 function changeMapView(_viewId: string) {
   currentMapView.value = 'world'
-  if (!map) return
-  map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
+  map?.setView(spainCenter, spainZoom, { animate: true, duration: 1 })
 }
 
-function focusOnDestination(item: typeof feedItems[0]) {
+function focusOnDestination(item: FeedItem) {
   if (!map) return
-  map.setView([item.lat, item.lng], 8, { animate: true, duration: 1 })
-  markers.forEach(marker => {
-    const latlng = marker.getLatLng()
-    if (latlng.lat === item.lat && latlng.lng === item.lng) {
-      marker.openPopup()
-    }
+  map.setView([item.lat, item.lng], 10, { animate: true, duration: 1 })
+  markers.forEach(({ marker }) => {
+    const ll = marker.getLatLng()
+    if (ll.lat === item.lat && ll.lng === item.lng) marker.openPopup()
   })
 }
 
 function filterMarkersByCategory(category: string) {
-  markers.forEach((marker, index) => {
-    const item = feedItems[index]
-    if (item.category === category) {
-      marker.setOpacity(1)
-    } else {
-      marker.setOpacity(0.2)
-    }
-  })
+  markers.forEach(({ marker, category: mc }) => marker.setOpacity(mc === category ? 1 : 0.15))
 }
 
 function showAllMarkers() {
-  markers.forEach(marker => {
-    marker.setOpacity(1)
-  })
+  markers.forEach(({ marker }) => marker.setOpacity(1))
 }
 
 function resetFilters() {
@@ -1016,88 +937,107 @@ function resetFilters() {
   checkOut.value = ''
   guests.value = 2
   showAllMarkers()
-  if (map) {
-    map.setView(europeCenter, europeZoom, { animate: true, duration: 1 })
-  }
+  map?.setView(spainCenter, spainZoom, { animate: true, duration: 1 })
   currentMapView.value = 'world'
 }
 
 function toggleMapCollapsed() {
   if (isMobile.value || mapExpanded.value) return
   mapCollapsed.value = !mapCollapsed.value
-  if (!mapCollapsed.value) {
-    setTimeout(() => map?.invalidateSize(), 750)
-  }
+  if (!mapCollapsed.value) setTimeout(() => map?.invalidateSize(), 750)
 }
 
 function formatTripDates(start: string, end: string): string {
   if (!start || !end) return ''
-  const s = new Date(start)
-  const e = new Date(end)
   const fmt = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' })
-  return `${fmt.format(s)} – ${fmt.format(e)}`
+  return `${fmt.format(new Date(start))} – ${fmt.format(new Date(end))}`
 }
 
-function goToPlan() {
-  store.setCurrentView('plan')
-}
+function goToPlan() { store.setCurrentView('plan') }
 
 function isoToMidnight(iso: string): Date {
-  const d = new Date(iso)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const d = new Date(iso); d.setHours(0, 0, 0, 0); return d
 }
-
 function addDays(date: Date, days: number): Date {
-  const d = new Date(date)
-  d.setDate(d.getDate() + days)
-  return d
+  const d = new Date(date); d.setDate(d.getDate() + days); return d
 }
-
 function toISODate(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function isAccommodationAvailable(
-  item: AccommodationFeedItem,
-  inDateIso: string,
-  outDateIso: string
-): boolean {
-  const checkInDate = isoToMidnight(inDateIso)
-  const checkOutDate = isoToMidnight(outDateIso)
-  if (!(checkInDate < checkOutDate)) return true
-
-  const availableFrom = isoToMidnight(item.availableFrom)
-  const availableTo = isoToMidnight(item.availableTo)
-  if (checkInDate < availableFrom) return false
-  if (checkOutDate > addDays(availableTo, 1)) return false
-
+function isAccommodationAvailable(item: AccommodationFeedItem, inDate: string, outDate: string): boolean {
+  const ci = isoToMidnight(inDate)
+  const co = isoToMidnight(outDate)
+  if (!(ci < co)) return true
+  if (ci < isoToMidnight(item.availableFrom)) return false
+  if (co > addDays(isoToMidnight(item.availableTo), 1)) return false
   const blocked = new Set(item.unavailableDates ?? [])
-  for (let d = new Date(checkInDate); d < checkOutDate; d = addDays(d, 1)) {
+  for (let d = new Date(ci); d < co; d = addDays(d, 1)) {
     if (blocked.has(toISODate(d))) return false
   }
   return true
 }
 
+// ── Mapa ─────────────────────────────────────────────────────────────────────
+function markerIcon(category: FeedCategory) {
+  const s = CATEGORY_STYLE[category]
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;width:40px;height:40px;background:${s.bg};border-radius:50%;animation:pulse 2s infinite;"></div>
+        <div style="width:32px;height:32px;background:${s.color};border-radius:8px;border:2px solid white;
+                    box-shadow:0 3px 10px rgba(0,0,0,0.35);z-index:1;display:flex;align-items:center;
+                    justify-content:center;font-size:16px;">${s.emoji}</div>
+      </div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  })
+}
+
+function addAllMarkers(items: FeedItem[]) {
+  if (!map || items.length === 0) return
+  const bounds: [number, number][] = []
+
+  items.forEach(item => {
+    const s = CATEGORY_STYLE[item.category]
+    const m = L.marker([item.lat, item.lng], { icon: markerIcon(item.category) })
+      .addTo(map!)
+      .bindPopup(`
+        <div style="min-width:210px;font-family:'DM Sans',sans-serif;">
+          <img src="${item.img}" alt="${item.title}"
+               style="width:100%;height:115px;object-fit:cover;border-radius:10px;margin-bottom:8px;"
+               onerror="this.style.display='none'" />
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+            <span style="background:${s.color};color:white;font-size:10px;font-weight:800;padding:2px 8px;
+                         border-radius:20px;text-transform:uppercase;letter-spacing:.05em;">${s.label}</span>
+            <span style="font-size:11px;color:#6b7280;">★ ${item.rating}</span>
+          </div>
+          <h4 style="font-weight:800;font-size:13px;text-transform:uppercase;margin-bottom:4px;
+                     color:#1f2937;line-height:1.3;">${item.title}</h4>
+          <p style="font-size:11px;color:#6b7280;margin-bottom:8px;">${item.city}, ${item.country}</p>
+          <span style="font-weight:800;font-size:16px;color:${s.color};">${item.price}</span>
+        </div>`, { maxWidth: 260, className: 'custom-popup' })
+
+    markers.push({ marker: m, category: item.category })
+    bounds.push([item.lat, item.lng])
+  })
+
+  if (bounds.length > 0) {
+    map.fitBounds(L.latLngBounds(bounds), { padding: [60, 60], maxZoom: 8, animate: true })
+  }
+}
+
 function initMap() {
   const el = document.getElementById('map')
-  if (!el) {
-    console.warn('[HomeView] #map no encontrado; mapa omitido')
-    return
-  }
+  if (!el) return
 
   try {
     map = L.map('map', {
-      center: europeCenter,
-      zoom: europeZoom,
+      center: spainCenter,
+      zoom: spainZoom,
       minZoom: 2,
-      maxBounds: [
-        [-89, -180],
-        [89, 180],
-      ],
+      maxBounds: [[-89, -180], [89, 180]],
       maxBoundsViscosity: 1.0,
       zoomControl: false,
       scrollWheelZoom: true,
@@ -1105,82 +1045,51 @@ function initMap() {
       touchZoom: true,
       doubleClickZoom: true,
       boxZoom: false,
-      keyboard: true
+      keyboard: true,
     })
 
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
-
-    map.setMaxBounds([
-      [-89, -180],
-      [89, 180],
-    ])
+    map.setMaxBounds([[-89, -180], [89, 180]])
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
+      maxZoom: 19,
     }).addTo(map)
 
-    const customIcon = L.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; width: 32px; height: 32px; background: rgba(249, 115, 22, 0.3); border-radius: 50%; animation: pulse 2s infinite;"></div>
-          <div style="width: 16px; height: 16px; background: #f97316; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 1;"></div>
-        </div>
-      `,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16]
-    })
-
-    feedItems.forEach(item => {
-      const marker = L.marker([item.lat, item.lng], { icon: customIcon })
-        .addTo(map!)
-        .bindPopup(`
-          <div style="min-width: 200px; font-family: 'DM Sans', sans-serif;">
-            <img src="${item.img}" alt="${item.title}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 8px;" />
-            <h4 style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 3px; color: #1f2937;">${item.title}</h4>
-            <p style="font-size: 11px; color: #6b7280; margin-bottom: 7px;">${item.category}</p>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 800; font-size: 16px; color: #f97316;">${item.price}</span>
-              <span style="font-size: 11px; color: #6b7280;">⭐ ${item.rating}</span>
-            </div>
-          </div>
-        `, {
-          maxWidth: 250,
-          className: 'custom-popup'
-        })
-      
-      markers.push(marker)
-    })
-
     if (!isMobile.value) {
-      map.on('movestart', () => {
-        if (!mapExpanded.value && !isExitingMapMode.value) {
-          mapExpanded.value = true
-        }
-      })
-
-      map.on('zoomstart', () => {
-        if (!mapExpanded.value && !isExitingMapMode.value) {
-          mapExpanded.value = true
-        }
-      })
-
-      map.on('click', () => {
-        if (!mapExpanded.value && !isExitingMapMode.value) {
-          mapExpanded.value = true
-        }
-      })
+      map.on('movestart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
+      map.on('zoomstart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
+      map.on('click',     () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
     }
 
-    setTimeout(() => {
-      map?.invalidateSize()
-    }, 100)
+    setTimeout(() => map?.invalidateSize(), 100)
   } catch (e) {
     console.error('[HomeView] Error al inicializar Leaflet', e)
   }
 }
 
+// ── Carga de servicios ────────────────────────────────────────────────────────
+async function loadServicios() {
+  const BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api'
+  const url = `${BASE.replace(/\/$/, '')}/servicios/`
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const servicios: Servicio[] = await res.json()
+
+    const items = servicios.map(servicioToFeedItem).filter((i): i is FeedItem => i !== null)
+    apiServiciosFeedItems.value = items
+
+    if (!map) setTimeout(() => addAllMarkers(items), 600)
+    else addAllMarkers(items)
+  } catch (e) {
+    console.error('[RumboPerfecto] Error cargando servicios:', e)
+  } finally {
+    isLoadingServicios.value = false
+  }
+}
+
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 let resizeTimeout: ReturnType<typeof setTimeout>
 onMounted(() => {
   checkIsMobile()
@@ -1188,30 +1097,22 @@ onMounted(() => {
 
   setTimeout(() => {
     initMap()
+    loadServicios()
   }, 100)
 
   const observer = new MutationObserver(() => {
     clearTimeout(resizeTimeout)
-    resizeTimeout = setTimeout(() => {
-      map?.invalidateSize()
-    }, 750)
+    resizeTimeout = setTimeout(() => map?.invalidateSize(), 750)
   })
-
-  const mapElement = document.getElementById('map')
-  if (mapElement?.parentElement) {
-    observer.observe(mapElement.parentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    })
+  const mapEl = document.getElementById('map')
+  if (mapEl?.parentElement) {
+    observer.observe(mapEl.parentElement, { attributes: true, attributeFilter: ['class', 'style'] })
   }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkIsMobile)
-  if (map) {
-    map.remove()
-    map = null
-  }
+  if (map) { map.remove(); map = null }
   document.documentElement.classList.remove('map-expanded')
 })
 </script>

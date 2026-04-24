@@ -1,4 +1,15 @@
 <template>
+  <!-- FULL-PAGE PLANNER DETAIL — overlays everything when a trip is selected -->
+  <Transition name="slide-up">
+    <TripPlannerDetail
+      v-if="plannerDetailTrip"
+      :trip="plannerDetailTrip"
+      @close="closePlannerDetail"
+      @delete="deleteTripFromDetail"
+      class="fixed inset-0 z-[60] overflow-y-auto"
+    />
+  </Transition>
+
   <div class="p-6 lg:p-12 min-h-full transition-colors"
        :class="store.isDark ? 'bg-rp-bg' : ''">
     <div class="max-w-6xl mx-auto">
@@ -118,7 +129,7 @@
             :class="store.isDark
               ? 'bg-rp-surface border border-rp-border hover:border-rp-accent/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
               : 'bg-white shadow-lg hover:shadow-2xl'"
-            @click="selectTrip(trip)"
+            @click="openPlannerDetail(trip)"
           >
             <!-- Color bar -->
             <div
@@ -162,9 +173,9 @@
                 :class="store.isDark
                   ? 'bg-rp-accent text-white hover:bg-orange-500 shadow-orange-900/30'
                   : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white'"
-                @click.stop="selectTrip(trip)"
+                @click.stop="openPlannerDetail(trip)"
               >
-                Ver Detalles
+                Ver Detalles →
               </button>
             </div>
           </div>
@@ -502,6 +513,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { CalendarOptions } from '@fullcalendar/core'
+import TripPlannerDetail from './TripPlannerDetail.vue'
 
 const store = useAppStore()
 
@@ -511,6 +523,21 @@ const showAddActivityModal = ref(false)
 const creatingTrip = ref(false)
 const selectedTrip = ref<Trip | null>(null)
 const selectedDay = ref(1)
+// New: full-page planner detail
+const plannerDetailTrip = ref<Trip | null>(null)
+
+function openPlannerDetail(trip: Trip) {
+  plannerDetailTrip.value = trip
+}
+
+function closePlannerDetail() {
+  plannerDetailTrip.value = null
+}
+
+async function deleteTripFromDetail(id: string) {
+  await store.deleteTrip(id)
+  plannerDetailTrip.value = null
+}
 
 const tripColors = new Map<string, string>()
 const colorPalette = [
@@ -696,6 +723,11 @@ watch(() => store.trips, () => {
 </script>
 
 <style scoped>
+.slide-up-enter-active { transition: all 0.4s cubic-bezier(0.34, 1.2, 0.64, 1); }
+.slide-up-leave-active { transition: all 0.25s ease; }
+.slide-up-enter-from { opacity: 0; transform: translateY(40px) scale(0.98); }
+.slide-up-leave-to { opacity: 0; transform: translateY(20px) scale(0.99); }
+
 /* CSS vars */
 .bg-rp-bg { background-color: var(--rp-bg); }
 .bg-rp-surface { background-color: var(--rp-surface); }
