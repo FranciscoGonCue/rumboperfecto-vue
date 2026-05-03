@@ -6,13 +6,16 @@ import type {
   BackendActivity,
   BackendTrip,
   BackendUser,
+  ItemPlan,
   LoginPayload,
+  PlanViaje,
   RegisterPayload,
   Trip,
   User,
 } from '@/types'
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api'
+const envUrl = (import.meta.env.VITE_API_URL as string) || ''
+const API_BASE_URL = envUrl || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? '/api' : 'http://localhost:8000/api')
 
 type SessionListener = () => void
 
@@ -50,7 +53,6 @@ const api = axios.create({
   },
   withCredentials: true,
 })
-
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -142,6 +144,8 @@ export function mapBackendUser(user: BackendUser): User {
     email: user.email,
     avatar: avatarFromEmail(user.email),
     isAuthenticated: true,
+    seller: user.seller ?? false,
+    planings: user.planings ?? [],
   }
 }
 
@@ -195,6 +199,20 @@ export const authApi = {
   async me(): Promise<User> {
     const response = await api.get<BackendUser>('/auth/me/')
     return mapBackendUser(response.data)
+  },
+
+  async updateProfile(payload: { name?: string; email?: string }): Promise<User> {
+    const response = await api.patch<BackendUser>('/auth/me/', payload)
+    return mapBackendUser(response.data)
+  },
+
+  async updateSeller(seller: boolean): Promise<User> {
+    const response = await api.post<BackendUser>('/auth/seller/', { seller })
+    return mapBackendUser(response.data)
+  },
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await api.post('/auth/change-password/', { old_password: oldPassword, new_password: newPassword })
   },
 
   async logout(): Promise<void> {
@@ -313,6 +331,70 @@ const publicClient = axios.create({
 export const serviciosApi = {
   async getAll(): Promise<Servicio[]> {
     const response = await publicClient.get<Servicio[]>('/servicios/')
+    return response.data
+  },
+}
+
+export const misServiciosApi = {
+  async getAll(): Promise<Servicio[]> {
+    const response = await api.get<Servicio[]>('/auth/mis-servicios/')
+    return response.data
+  },
+}
+
+export const plansApi = {
+  async getAll(): Promise<PlanViaje[]> {
+    const response = await api.get<PlanViaje[]>('/auth/mis-planes/')
+    return response.data
+  },
+
+  async getOne(id: number): Promise<PlanViaje> {
+    const response = await api.get<PlanViaje>(`/auth/mis-planes/${id}/`)
+    return response.data
+  },
+
+  async create(payload: { nombre_plan: string; fecha_inicio: string; fecha_fin: string }): Promise<PlanViaje> {
+    const response = await api.post<PlanViaje>('/auth/mis-planes/', payload)
+    return response.data
+  },
+
+  async delete(id: number): Promise<void> {
+    await api.delete(`/auth/mis-planes/${id}/`)
+  },
+
+  async updateItem(planId: number, itemId: number, payload: Partial<{
+    fecha_hora_inicio: string | null
+    fecha_hora_fin: string | null
+    nombre_servicio: string
+    precio_estimado: number | null
+    estado_pago: string | null
+    localizador_confirmacion: string | null
+  }>): Promise<ItemPlan> {
+    const response = await api.patch<ItemPlan>(`/auth/mis-planes/${planId}/items/${itemId}/`, payload)
+    return response.data
+  },
+
+  async deleteItem(planId: number, itemId: number): Promise<void> {
+    await api.delete(`/auth/mis-planes/${planId}/items/${itemId}/`)
+  },
+
+  async createItem(planId: number, payload: {
+    nombre_servicio: string
+    tipo?: number | null
+    fecha_hora_inicio?: string | null
+    fecha_hora_fin?: string | null
+    precio_estimado?: number | null
+    estado_pago?: string | null
+    localizador_confirmacion?: string | null
+  }): Promise<ItemPlan> {
+    const response = await api.post<ItemPlan>(`/auth/mis-planes/${planId}/items/`, payload)
+    return response.data
+  },
+}
+
+export const tiposServicioApi = {
+  async getAll(): Promise<{ id_tipo: number; nombre_tipo: string; icono: string | null }[]> {
+    const response = await api.get('/tipos-servicio/')
     return response.data
   },
 }

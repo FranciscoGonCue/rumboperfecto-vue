@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { activitiesApi, authApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
-import type { Activity, Trip, User, View } from '@/types'
+import { activitiesApi, authApi, plansApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
+import type { Activity, PlanViaje, Trip, User, View } from '@/types'
 
 const THEME_STORAGE_KEY = 'rumbo_theme'
 const LOCAL_TRIPS_KEY = 'rumbo_local_trips'
@@ -24,18 +24,42 @@ function saveLocalTrips(trips: Trip[]): void {
   }
 }
 
+function extractApiErrorMessage(error: any, fallback: string): string {
+  const detail = error?.response?.data?.detail
+  if (typeof detail === 'string' && detail.trim()) {
+    return detail
+  }
+
+  const data = error?.response?.data
+  if (data && typeof data === 'object') {
+    const firstEntry = Object.values(data)[0]
+    if (Array.isArray(firstEntry) && typeof firstEntry[0] === 'string') {
+      return firstEntry[0]
+    }
+    if (typeof firstEntry === 'string') {
+      return firstEntry
+    }
+  }
+
+  return fallback
+}
+
 const GUEST_USER: User = {
   id: '0',
   name: 'Invitado',
   email: '',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest',
   isAuthenticated: false,
+  seller: false,
+  planings: [],
 }
 
 export const useAppStore = defineStore('app', () => {
   const currentView = ref<View>('inicio')
   const theme = ref<'light' | 'dark'>('light')
   const trips = ref<Trip[]>(loadLocalTrips())
+  const planes = ref<PlanViaje[]>([])
+  const planesLoading = ref(false)
   const user = ref<User>({ ...GUEST_USER })
   const selectedAccommodationId = ref<string | null>(null)
   const selectedTransportId = ref<string | null>(null)
@@ -147,18 +171,34 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  async function register(email: string, password: string, name: string): Promise<boolean> {
+  async function register(
+    email: string,
+    password: string,
+    name: string,
+    seller = false,
+    alojamientos: string[] = [],
+    actividades: string[] = [],
+    restaurantes: string[] = [],
+  ): Promise<boolean> {
     authLoading.value = true
     networkError.value = null
 
     try {
-      const session = await authApi.register({ email, password, name })
+      const session = await authApi.register({
+        email,
+        password,
+        name,
+        seller,
+        alojamientos,
+        actividades,
+        restaurantes,
+      })
       authApi.saveSession(session.access, session.refresh)
       user.value = session.user
       trips.value = []
       return true
     } catch (error: any) {
-      networkError.value = error?.response?.data?.detail ?? 'No se pudo completar el registro.'
+      networkError.value = extractApiErrorMessage(error, 'No se pudo completar el registro.')
       return false
     } finally {
       authLoading.value = false
@@ -176,8 +216,46 @@ export const useAppStore = defineStore('app', () => {
       trips.value = await tripsApi.getAll()
       return true
     } catch (error: any) {
-      networkError.value = error?.response?.data?.detail ?? 'No se pudo iniciar sesion.'
+      networkError.value = extractApiErrorMessage(error, 'No se pudo iniciar sesion.')
       return false
+    } finally {
+      authLoading.value = false
+    }
+  }
+
+  async function updateProfile(payload: { name?: string; email?: string }): Promise<void> {
+    authLoading.value = true
+    networkError.value = null
+    try {
+      const updated = await authApi.updateProfile(payload)
+      user.value = updated
+    } catch (error: any) {
+      networkError.value = extractApiErrorMessage(error, 'No se pudo actualizar el perfil.')
+      throw error
+    } finally {
+      authLoading.value = false
+    }
+  }
+
+  async function updateSeller(seller: boolean): Promise<void> {
+    networkError.value = null
+    try {
+      const updated = await authApi.updateSeller(seller)
+      user.value = updated
+    } catch (error: any) {
+      networkError.value = extractApiErrorMessage(error, 'No se pudo actualizar el tipo de cuenta.')
+      throw error
+    }
+  }
+
+  async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    authLoading.value = true
+    networkError.value = null
+    try {
+      await authApi.changePassword(oldPassword, newPassword)
+    } catch (error: any) {
+      networkError.value = extractApiErrorMessage(error, 'No se pudo cambiar la contraseña.')
+      throw error
     } finally {
       authLoading.value = false
     }
@@ -290,6 +368,36 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  async function createPlan(payload: { nombre_plan: string; fecha_inicio: string; fecha_fin: string }): Promise<PlanViaje> {
+    const created = await plansApi.create(payload)
+    planes.value.unshift(created)
+    return created
+  }
+
+  async function loadPlan(id: number): Promise<PlanViaje> {
+    const plan = await plansApi.getOne(id)
+    const idx = planes.value.findIndex(p => p.id_plan === id)
+    if (idx !== -1) planes.value[idx] = plan
+    return plan
+  }
+
+  async function deletePlan(id: number): Promise<void> {
+    await plansApi.delete(id)
+    planes.value = planes.value.filter(p => p.id_plan !== id)
+  }
+
+  async function fetchPlanes(): Promise<void> {
+    if (!user.value.isAuthenticated) return
+    planesLoading.value = true
+    try {
+      planes.value = await plansApi.getAll()
+    } catch {
+      // silently fail; planes stays as previous value
+    } finally {
+      planesLoading.value = false
+    }
+  }
+
   setSessionExpiredHandler(() => {
     clearSessionState()
     networkError.value = 'Tu sesion ha expirado. Inicia sesion nuevamente.'
@@ -303,6 +411,8 @@ export const useAppStore = defineStore('app', () => {
     selectedRestaurantId,
     theme,
     trips,
+    planes,
+    planesLoading,
     user,
     bootstrapping,
     tripsLoading,
@@ -327,10 +437,17 @@ export const useAppStore = defineStore('app', () => {
     bootstrapSession,
     register,
     login,
+    updateProfile,
+    updateSeller,
+    changePassword,
     logout,
     loadTrips,
     addTrip,
     deleteTrip,
     addActivity,
+    fetchPlanes,
+    createPlan,
+    loadPlan,
+    deletePlan,
   }
 })

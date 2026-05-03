@@ -1,12 +1,13 @@
 <template>
-  <!-- FULL-PAGE PLANNER DETAIL — overlays everything when a trip is selected -->
+  <!-- FULL-PAGE PLAN DETAIL — overlays everything when a plan is selected -->
   <Transition name="slide-up">
-    <TripPlannerDetail
-      v-if="plannerDetailTrip"
-      :trip="plannerDetailTrip"
-      @close="closePlannerDetail"
-      @delete="deleteTripFromDetail"
+    <PlanDetail
+      v-if="selectedPlan"
+      :plan="selectedPlan"
+      :loading="planDetailLoading"
       class="fixed inset-0 z-[60] overflow-y-auto"
+      @close="selectedPlan = null"
+      @delete="handleDeletePlan"
     />
   </Transition>
 
@@ -96,7 +97,7 @@
       </Transition>
 
       <!-- EMPTY STATE -->
-      <div v-if="store.trips.length === 0" class="text-center py-20">
+      <div v-if="store.planes.length === 0" class="text-center py-20">
         <div class="w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center"
              :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-orange-50'">
           <Plane :size="56" class="text-rp-accent" />
@@ -120,51 +121,68 @@
 
       <!-- TRIPS CONTENT -->
       <div v-else>
+        <!-- LOADING -->
+        <div v-if="store.planesLoading" class="flex justify-center py-20">
+          <div class="w-10 h-10 rounded-full border-4 border-rp-accent border-t-transparent animate-spin" />
+        </div>
+
         <!-- CARDS MODE -->
-        <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div v-else-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div
-            v-for="trip in store.trips"
-            :key="trip.id"
+            v-for="trip in store.planes"
+            :key="trip.id_plan"
             class="rounded-2xl overflow-hidden group cursor-pointer transform hover:scale-[1.02] transition-all duration-300"
             :class="store.isDark
               ? 'bg-rp-surface border border-rp-border hover:border-rp-accent/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
               : 'bg-white shadow-lg hover:shadow-2xl'"
-            @click="openPlannerDetail(trip)"
           >
             <!-- Color bar -->
             <div
               class="h-1 w-full"
-              :style="{ background: getTripColor(trip.id) }"
+              :style="{ background: getTripColor(String(trip.id_plan)) }"
             />
 
             <div class="p-6">
-              <h3 class="text-lg font-black uppercase tracking-tight mb-3 transition-colors"
-                  :class="store.isDark
-                    ? 'text-rp-text group-hover:text-rp-accent'
-                    : 'text-gray-800 group-hover:text-rumbo-orange'">
-                {{ trip.title }}
-              </h3>
+              <div class="flex items-start justify-between mb-3">
+                <h3 class="text-lg font-black uppercase tracking-tight transition-colors"
+                    :class="store.isDark
+                      ? 'text-rp-text group-hover:text-rp-accent'
+                      : 'text-gray-800 group-hover:text-rumbo-orange'">
+                  {{ trip.nombre_plan || `Plan ${trip.id_plan}` }}
+                </h3>
+                <span
+                  v-if="trip.estado_plan"
+                  class="ml-2 shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  :class="{
+                    'bg-yellow-100 text-yellow-700': trip.estado_plan === 'Borrador',
+                    'bg-green-100 text-green-700': trip.estado_plan === 'Confirmado',
+                    'bg-gray-100 text-gray-500': trip.estado_plan === 'Finalizado',
+                  }"
+                >{{ trip.estado_plan }}</span>
+              </div>
 
               <div class="flex items-center space-x-2 text-sm mb-4"
                    :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
                 <Calendar :size="16" class="text-rp-accent" />
                 <span class="font-semibold">
-                  {{ formatDate(trip.startDate) }} - {{ formatDate(trip.endDate) }}
+                  {{ trip.fecha_inicio ? formatDate(trip.fecha_inicio) : '—' }}
+                  –
+                  {{ trip.fecha_fin ? formatDate(trip.fecha_fin) : '—' }}
                 </span>
               </div>
 
               <div class="grid grid-cols-2 gap-3 mb-5">
                 <div class="rounded-xl p-3 text-center"
                      :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-orange-50'">
-                  <p class="text-xl font-black text-rp-accent">{{ getDaysCount(trip) }}</p>
+                  <p class="text-xl font-black text-rp-accent">{{ getPlanDays(trip) }}</p>
                   <p class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
                      :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">días</p>
                 </div>
                 <div class="rounded-xl p-3 text-center"
                      :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-blue-50'">
-                  <p class="text-xl font-black text-blue-400">{{ getActivitiesCount(trip) }}</p>
+                  <p class="text-xl font-black text-blue-400">{{ trip.items.length }}</p>
                   <p class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
-                     :class="store.isDark ? 'text-rp-muted' : 'text-blue-600'">actividades</p>
+                     :class="store.isDark ? 'text-rp-muted' : 'text-blue-600'">ítems</p>
                 </div>
               </div>
 
@@ -173,7 +191,7 @@
                 :class="store.isDark
                   ? 'bg-rp-accent text-white hover:bg-orange-500 shadow-orange-900/30'
                   : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white'"
-                @click.stop="openPlannerDetail(trip)"
+                @click.stop="openPlanDetail(trip.id_plan)"
               >
                 Ver Detalles →
               </button>
@@ -293,251 +311,51 @@
       </Transition>
     </Teleport>
 
-    <!-- MODAL: TRIP DETAIL -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="selectedTrip"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
-          @click.self="selectedTrip = null"
-        >
-          <div class="rounded-[36px] p-8 max-w-4xl w-full shadow-2xl transform transition-all my-8"
-               :class="store.isDark
-                 ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
-                 : 'bg-white'">
-            <div class="flex items-center justify-between mb-7">
-              <div>
-                <h3 class="text-2xl font-black uppercase tracking-tight"
-                    :class="store.isDark ? 'text-rp-text' : ''"
-                    style="font-family: 'Syne', sans-serif;">{{ selectedTrip.title }}</h3>
-                <p class="mt-1.5 text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
-                  {{ formatDate(selectedTrip.startDate) }} - {{ formatDate(selectedTrip.endDate) }}
-                </p>
-              </div>
-              <div class="flex items-center space-x-2">
-                <button
-                  class="p-2.5 rounded-full transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-110"
-                  :class="store.isDark
-                    ? 'bg-red-950/40 hover:bg-red-950/70 border border-red-800/30'
-                    : 'bg-red-50 hover:bg-red-100'"
-                  @click.stop="deleteTrip(selectedTrip.id); selectedTrip = null"
-                  title="Eliminar viaje"
-                >
-                  <Trash2 :size="18" class="text-red-400 group-hover:text-red-500 transition-colors" />
-                </button>
-                <button
-                  class="p-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-110"
-                  :class="store.isDark
-                    ? 'bg-rp-surface-2 hover:bg-rp-surface border border-rp-border text-rp-muted'
-                    : 'bg-gray-50 hover:bg-gray-100 text-gray-400'"
-                  @click="selectedTrip = null"
-                  title="Cerrar"
-                >
-                  <X :size="18" />
-                </button>
-              </div>
-            </div>
-
-            <!-- Day tabs -->
-            <div class="flex overflow-x-auto space-x-2 mb-7 pb-3"
-                 :class="store.isDark ? 'border-b border-rp-border' : 'border-b border-gray-200'">
-              <button
-                v-for="day in getDaysCount(selectedTrip)"
-                :key="day"
-                class="px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all text-sm"
-                :class="selectedDay === day
-                  ? 'bg-rp-accent text-white shadow-lg shadow-orange-900/30'
-                  : store.isDark
-                    ? 'bg-rp-surface-2 border border-rp-border text-rp-muted hover:text-rp-text'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                @click="selectedDay = day"
-              >
-                Día {{ day }}
-              </button>
-            </div>
-
-            <!-- Activities -->
-            <div class="space-y-3 mb-7">
-              <div
-                v-for="activity in getActivitiesForDay(selectedTrip, selectedDay)"
-                :key="activity.id"
-                class="flex items-start space-x-4 p-4 rounded-2xl transition-colors"
-                :class="store.isDark
-                  ? 'bg-orange-950/15 border border-orange-900/25'
-                  : 'bg-orange-50'"
-              >
-                <div class="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center shadow-sm"
-                     :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-white'">
-                  <Clock :size="22" class="text-rp-accent" />
-                </div>
-                <div class="flex-1">
-                  <div class="flex items-center justify-between mb-1">
-                    <h4 class="font-bold" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
-                      {{ activity.title }}
-                    </h4>
-                    <span class="text-sm font-bold text-rp-accent">{{ activity.time }}</span>
-                  </div>
-                  <p class="text-sm flex items-center" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
-                    <MapPin :size="13" class="mr-1" />
-                    {{ activity.location }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Add activity button -->
-              <button
-                class="w-full p-4 border-2 border-dashed rounded-2xl font-bold flex items-center justify-center space-x-2 transition-all duration-200"
-                :class="store.isDark
-                  ? 'border-rp-border text-rp-muted hover:border-rp-accent/40 hover:text-rp-accent hover:bg-orange-950/10'
-                  : 'border-gray-300 text-gray-500 hover:border-rumbo-orange hover:text-rumbo-orange hover:bg-orange-50'"
-                @click="showAddActivityModal = true"
-              >
-                <Plus :size="18" />
-                <span>Agregar Actividad</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- MODAL: ADD ACTIVITY -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="showAddActivityModal && selectedTrip"
-          class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          @click.self="showAddActivityModal = false"
-        >
-          <div class="rounded-[36px] p-8 max-w-md w-full shadow-2xl transform transition-all"
-               :class="store.isDark
-                 ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
-                 : 'bg-white'">
-            <div class="flex items-center justify-between mb-8 pb-6"
-                 :class="store.isDark ? 'border-b border-rp-border' : 'border-b-2 border-gray-100'">
-              <div class="flex items-center space-x-3">
-                <div class="p-3 rounded-xl bg-rp-accent">
-                  <Activity :size="24" class="text-white" />
-                </div>
-                <h3 class="text-xl font-black uppercase tracking-tight"
-                    :class="store.isDark ? 'text-rp-text' : ''"
-                    style="font-family: 'Syne', sans-serif;">Nueva Actividad</h3>
-              </div>
-              <button
-                class="p-2.5 rounded-full transition-all duration-200 transform hover:scale-110"
-                :class="store.isDark
-                  ? 'bg-rp-surface-2 hover:bg-rp-surface text-rp-muted border border-rp-border'
-                  : 'bg-gray-100 hover:bg-gray-200'"
-                @click="showAddActivityModal = false"
-                title="Cerrar"
-              >
-                <X :size="18" />
-              </button>
-            </div>
-
-            <form @submit.prevent="handleAddActivity" class="space-y-5">
-              <div>
-                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
-                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
-                  Título
-                </label>
-                <input
-                  v-model="newActivity.title"
-                  type="text"
-                  required
-                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
-                  :class="store.isDark
-                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text placeholder:text-rp-muted focus:border-rp-accent/50'
-                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
-                  placeholder="Ej: Visita al templo"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
-                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
-                  Ubicación
-                </label>
-                <input
-                  v-model="newActivity.location"
-                  type="text"
-                  required
-                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
-                  :class="store.isDark
-                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text placeholder:text-rp-muted focus:border-rp-accent/50'
-                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
-                  placeholder="Ej: Bangkok, Tailandia"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold mb-2 uppercase tracking-wider"
-                       :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
-                  Hora
-                </label>
-                <input
-                  v-model="newActivity.time"
-                  type="time"
-                  required
-                  class="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all duration-200"
-                  :class="store.isDark
-                    ? 'bg-rp-surface-2 border border-rp-border text-rp-text focus:border-rp-accent/50'
-                    : 'bg-gray-50 border-2 border-gray-200 focus:bg-white focus:border-rumbo-orange shadow-sm'"
-                />
-              </div>
-
-              <button
-                type="submit"
-                class="w-full py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
-                :class="store.isDark
-                  ? 'bg-rp-accent text-white shadow-orange-900/40 hover:bg-orange-500'
-                  : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-orange-200'"
-              >
-                Agregar Actividad
-              </button>
-            </form>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Plus, Plane, Calendar, MapPin, Activity, Trash2, X, Clock, AlertCircle } from 'lucide-vue-next'
-import type { Trip, Activity as ActivityType } from '@/types'
+import { Plus, Plane, Calendar, AlertCircle } from 'lucide-vue-next'
+import type { PlanViaje } from '@/types'
+import PlanDetail from './PlanDetail.vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { CalendarOptions } from '@fullcalendar/core'
-import TripPlannerDetail from './TripPlannerDetail.vue'
-
 const store = useAppStore()
+
+// Fetch planes del usuario cada vez que se monta la vista
+onMounted(() => {
+  store.fetchPlanes()
+})
 
 const viewMode = ref<'cards' | 'calendar'>('cards')
 const showAddTripModal = ref(false)
-const showAddActivityModal = ref(false)
 const creatingTrip = ref(false)
-const selectedTrip = ref<Trip | null>(null)
-const selectedDay = ref(1)
-// New: full-page planner detail
-const plannerDetailTrip = ref<Trip | null>(null)
+const selectedPlan = ref<PlanViaje | null>(null)
+const planDetailLoading = ref(false)
 
-function openPlannerDetail(trip: Trip) {
-  plannerDetailTrip.value = trip
+async function openPlanDetail(id: number) {
+  // Mostrar inmediatamente con los datos que ya tenemos y recargar en background
+  selectedPlan.value = store.planes.find(p => p.id_plan === id) ?? null
+  planDetailLoading.value = true
+  try {
+    const fresh = await store.loadPlan(id)
+    selectedPlan.value = fresh
+  } finally {
+    planDetailLoading.value = false
+  }
 }
 
-function closePlannerDetail() {
-  plannerDetailTrip.value = null
+async function handleDeletePlan(id: number) {
+  if (!confirm('¿Eliminar este plan de viaje?')) return
+  await store.deletePlan(id)
+  selectedPlan.value = null
 }
 
-async function deleteTripFromDetail(id: string) {
-  await store.deleteTrip(id)
-  plannerDetailTrip.value = null
-}
 
 const tripColors = new Map<string, string>()
 const colorPalette = [
@@ -551,12 +369,6 @@ const newTrip = reactive({
   endDate: ''
 })
 
-const newActivity = reactive({
-  title: '',
-  location: '',
-  time: ''
-})
-
 function getTripColor(tripId: string): string {
   if (!tripColors.has(tripId)) {
     tripColors.set(tripId, colorPalette[tripColors.size % colorPalette.length])
@@ -565,24 +377,24 @@ function getTripColor(tripId: string): string {
 }
 
 const calendarEvents = computed(() => {
-  return store.trips.map((trip) => {
-    return {
-      id: trip.id,
-      title: trip.title,
-      start: trip.startDate,
-      end: new Date(new Date(trip.endDate).getTime() + 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0],
-      backgroundColor: getTripColor(trip.id),
-      borderColor: getTripColor(trip.id),
-      textColor: '#fff',
-      extendedProps: {
-        tripId: trip.id,
-        trip: trip
-      },
-      display: 'block'
-    }
-  })
+  return store.planes
+    .filter(p => p.fecha_inicio && p.fecha_fin)
+    .map((plan) => {
+      const id = String(plan.id_plan)
+      return {
+        id,
+        title: plan.nombre_plan || `Plan ${plan.id_plan}`,
+        start: plan.fecha_inicio!,
+        end: new Date(new Date(plan.fecha_fin!).getTime() + 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        backgroundColor: getTripColor(id),
+        borderColor: getTripColor(id),
+        textColor: '#fff',
+        extendedProps: { plan },
+        display: 'block'
+      }
+    })
 })
 
 const calendarOptions = computed<CalendarOptions>(() => ({
@@ -617,11 +429,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventOrderStrict: true
 } as CalendarOptions))
 
-function handleEventClick(info: any) {
-  const trip = info.event.extendedProps.trip
-  if (trip) {
-    selectTrip(trip)
-  }
+function handleEventClick(_info: any) {
+  // Abrir detalle del plan al hacer click en el calendario (futuro)
 }
 
 function handleEventContent(info: any) {
@@ -645,81 +454,35 @@ function handleEventClassNames(_info: any) {
 
 async function handleAddTrip() {
   creatingTrip.value = true
-  const trip: Trip = {
-    id: Date.now().toString(),
-    title: newTrip.title,
-    startDate: newTrip.startDate,
-    endDate: newTrip.endDate,
-    activities: {}
-  }
   try {
-    await store.addTrip(trip)
+    await store.createPlan({
+      nombre_plan: newTrip.title,
+      fecha_inicio: newTrip.startDate,
+      fecha_fin: newTrip.endDate,
+    })
     showAddTripModal.value = false
     newTrip.title = ''
     newTrip.startDate = ''
     newTrip.endDate = ''
   } catch {
-    // store.networkError is set; the banner will display it
+    store.networkError = 'No se pudo crear el viaje. Inténtalo de nuevo.'
   } finally {
     creatingTrip.value = false
   }
 }
 
-async function handleAddActivity() {
-  if (!selectedTrip.value) return
-  const activity: ActivityType = {
-    id: Date.now().toString(),
-    title: newActivity.title,
-    location: newActivity.location,
-    time: newActivity.time
-  }
-  try {
-    await store.addActivity(selectedTrip.value.id, selectedDay.value, activity)
-  } catch {
-    return
-  }
-  showAddActivityModal.value = false
-  newActivity.title = ''
-  newActivity.location = ''
-  newActivity.time = ''
-  selectedTrip.value = store.trips.find(t => t.id === selectedTrip.value?.id) || null
-}
-
-function selectTrip(trip: Trip) {
-  selectedTrip.value = trip
-  selectedDay.value = 1
-}
-
-async function deleteTrip(id: string) {
-  if (confirm('¿Estás seguro de que quieres eliminar este viaje?')) {
-    await store.deleteTrip(id)
-  }
-}
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-function getDaysCount(trip: Trip) {
-  const start = new Date(trip.startDate)
-  const end = new Date(trip.endDate)
-  const diffTime = Math.abs(end.getTime() - start.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays + 1
+function getPlanDays(plan: { fecha_inicio: string | null; fecha_fin: string | null }): number {
+  if (!plan.fecha_inicio || !plan.fecha_fin) return 0
+  const start = new Date(plan.fecha_inicio)
+  const end = new Date(plan.fecha_fin)
+  return Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 }
-
-function getActivitiesCount(trip: Trip) {
-  return Object.values(trip.activities).reduce((sum, activities) => sum + activities.length, 0)
-}
-
-function getActivitiesForDay(trip: Trip, day: number) {
-  return trip.activities[day] || []
-}
-
-watch(() => store.trips, () => {
-  // El calendario se actualiza automáticamente via calendarEvents computed
-}, { deep: true })
 </script>
 
 <style scoped>

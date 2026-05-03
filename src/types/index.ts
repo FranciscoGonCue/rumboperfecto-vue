@@ -14,9 +14,11 @@ export interface Trip {
 }
 
 export type View =
+  | 'auth'
   | 'inicio'
   | 'plan'
   | 'perfil'
+  | 'gestion'
   | 'alojamiento'
   | 'transporte'
   | 'actividad'
@@ -28,6 +30,8 @@ export interface User {
   email: string
   avatar?: string
   isAuthenticated: boolean
+  seller: boolean
+  planings: string[]
 }
 
 export interface BackendUser {
@@ -36,6 +40,11 @@ export interface BackendUser {
   email: string
   first_name: string
   last_name: string
+  seller?: boolean
+  alojamientos?: string[]
+  actividades?: string[]
+  restaurantes?: string[]
+  planings?: string[]
 }
 
 export interface AuthResponse {
@@ -53,6 +62,36 @@ export interface RegisterPayload {
   email: string
   password: string
   name: string
+  seller: boolean
+  alojamientos: string[]
+  actividades: string[]
+  restaurantes: string[]
+  planings: string[]
+}
+
+export interface ItemPlan {
+  id_item: number
+  nombre_servicio: string | null
+  tipo: number | null
+  tipo_nombre: string | null
+  fecha_hora_inicio: string | null
+  fecha_hora_fin: string | null
+  precio_estimado: number | null
+  monto_total: number | null
+  estado_pago: 'Pendiente' | 'Pagado' | 'Cancelado' | null
+  localizador_confirmacion: string | null
+  fecha_transaccion: string | null
+  ubicacion_lat: number | null
+  ubicacion_lon: number | null
+}
+
+export interface PlanViaje {
+  id_plan: number
+  nombre_plan: string | null
+  fecha_inicio: string | null
+  fecha_fin: string | null
+  estado_plan: 'Borrador' | 'Confirmado' | 'Finalizado' | null
+  items: ItemPlan[]
 }
 
 export interface BackendActivity {

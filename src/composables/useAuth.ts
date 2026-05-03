@@ -48,12 +48,20 @@ export function useAuth() {
     }
   }
 
-  async function register(email: string, password: string, name: string): Promise<boolean> {
+  async function register(
+    email: string,
+    password: string,
+    name: string,
+    seller = false,
+    alojamiento: string[] = [],
+    actividad: string[] = [],
+    restaurante: string[] = [],
+  ): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
-      const ok = await store.register(email, password, name)
+      const ok = await store.register(email, password, name, seller, alojamiento, actividad, restaurante)
       if (!ok) {
         error.value = store.networkError ?? 'No se pudo completar el registro.'
       }

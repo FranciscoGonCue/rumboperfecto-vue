@@ -3,15 +3,20 @@
     class="relative min-h-screen overflow-x-visible transition-colors duration-300"
     :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-white text-gray-900'"
   >
-    <SplashScreen :isVisible="showSplash" @complete="showSplash = false" />
-    <div class="flex flex-col min-h-screen">
-      <!-- RESPONSIVE HEADER -->
-      <header
-        class="sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between transition-colors duration-300"
-        :class="store.isDark
-          ? 'bg-rp-surface/95 border-b border-rp-border'
-          : 'bg-white/95 border-b border-orange-100 shadow-sm'"
-      >
+    <!-- Show Auth View when not authenticated -->
+    <AuthView v-if="!store.isAuthenticated" />
+
+    <!-- Show Main App when authenticated -->
+    <template v-else>
+      <SplashScreen :isVisible="showSplash" @complete="showSplash = false" />
+      <div class="flex flex-col min-h-screen">
+        <!-- RESPONSIVE HEADER -->
+        <header
+          class="sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between transition-colors duration-300"
+          :class="store.isDark
+            ? 'bg-rp-surface/95 border-b border-rp-border'
+            : 'bg-white/95 border-b border-orange-100 shadow-sm'"
+        >
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 bg-rp-accent rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-900/30 rotate-3">
             <Plane :size="22" class="-rotate-12" />
@@ -42,6 +47,14 @@
             label="Plan"
             :icon="Calendar"
             @click="store.setCurrentView('plan')"
+          />
+          <DesktopNavLink
+            v-if="store.user.seller"
+            :active="store.currentView === 'gestion'"
+            :dark="store.isDark"
+            label="Gestión"
+            :icon="LayoutGrid"
+            @click="store.setCurrentView('gestion')"
           />
           <DesktopNavLink
             :active="store.currentView === 'perfil'"
@@ -120,6 +133,14 @@
             @click="store.setCurrentView('plan')"
           />
           <NavButton
+            v-if="store.user.seller"
+            :is-active="store.currentView === 'gestion'"
+            :dark="store.isDark"
+            :icon="LayoutGrid"
+            label="Gestión"
+            @click="store.setCurrentView('gestion')"
+          />
+          <NavButton
             :is-active="store.currentView === 'perfil'"
             :dark="store.isDark"
             :icon="User"
@@ -129,16 +150,19 @@
         </div>
       </nav>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Home, Calendar, User, Plane, Plus } from 'lucide-vue-next'
+import { Home, Calendar, User, Plane, Plus, LayoutGrid } from 'lucide-vue-next'
+import AuthView from '@/views/AuthView.vue'
 import HomeView from '@/views/HomeView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import GestionView from '@/views/GestionView.vue'
 import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
 import TransportDetailView from '@/views/TransportDetailView.vue'
 import ActivityDetailView from '@/views/ActivityDetailView.vue'
@@ -172,8 +196,18 @@ const selectedRestaurant = computed(() => {
 const currentViewComponent = computed(() => {
   if (store.currentView === 'plan') return PlannerView
   if (store.currentView === 'perfil') return ProfileView
+  if (store.currentView === 'gestion') return GestionView
   return HomeView
 })
+
+watch(
+  () => store.user.seller,
+  (isSeller) => {
+    if (!isSeller && store.currentView === 'gestion') {
+      store.setCurrentView('inicio')
+    }
+  },
+)
 
 onMounted(async () => {
   await store.bootstrapSession()
