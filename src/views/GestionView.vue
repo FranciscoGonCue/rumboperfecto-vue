@@ -1,6 +1,141 @@
 <template>
   <div class="min-h-full pb-32 lg:pb-12" :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-gray-50 text-gray-900'">
 
+    <!-- RESERVAS DEL SERVICIO MODAL -->
+    <Transition name="slide-up">
+      <div v-if="reservasModal.open" class="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeReservasModal" />
+        <div class="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-t-3xl lg:rounded-3xl overflow-hidden shadow-2xl"
+             :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white'">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
+               :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
+            <div>
+              <h3 class="text-lg font-black uppercase tracking-tight" style="font-family:'Syne',sans-serif;"
+                  :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">
+                Reservas
+              </h3>
+              <p class="text-xs font-semibold mt-0.5" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                {{ reservasModal.item?.nombre }}
+              </p>
+            </div>
+            <button @click="closeReservasModal" class="p-2 rounded-xl transition-colors"
+                    :class="store.isDark ? 'hover:bg-rp-surface-2 text-rp-muted' : 'hover:bg-gray-100 text-gray-500'">
+              <X :size="20" />
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="overflow-y-auto flex-1 p-6">
+
+            <!-- Loading -->
+            <div v-if="reservasModal.loading" class="flex justify-center py-12">
+              <Loader2 :size="32" class="animate-spin" style="color: var(--rp-accent)" />
+            </div>
+
+            <!-- Error -->
+            <p v-else-if="reservasModal.error" class="text-center text-red-500 font-bold py-10">
+              {{ reservasModal.error }}
+            </p>
+
+            <!-- Empty -->
+            <div v-else-if="!reservasModal.list.length" class="text-center py-14">
+              <CalendarCheck :size="40" class="mx-auto mb-3 opacity-20"
+                             :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'" />
+              <p class="font-bold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                Este servicio aún no tiene reservas
+              </p>
+            </div>
+
+            <!-- Lista -->
+            <div v-else class="space-y-3">
+              <div v-for="r in reservasModal.list" :key="r.id"
+                   class="rounded-2xl p-4 border"
+                   :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-bold text-sm" :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">
+                      {{ r.usuario_nombre || r.usuario_email }}
+                    </p>
+                    <p class="text-xs mt-0.5" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                      {{ r.usuario_email }}
+                    </p>
+                    <div class="flex flex-wrap gap-3 mt-2 text-xs font-semibold"
+                         :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                      <span class="flex items-center gap-1">
+                        <Calendar :size="11" /> {{ fmtDate(r.fecha_inicio) }}
+                        <template v-if="r.fecha_fin"> → {{ fmtDate(r.fecha_fin) }}</template>
+                      </span>
+                      <span v-if="r.turno" class="flex items-center gap-1">
+                        <Clock :size="11" /> {{ r.turno }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <Users :size="11" /> {{ r.personas }} pers.
+                      </span>
+                      <span v-if="r.precio_total != null" class="font-bold" style="color:var(--rp-accent)">
+                        {{ r.precio_total.toLocaleString() }} €
+                      </span>
+                    </div>
+                  </div>
+                  <span class="flex-shrink-0 px-2 py-1 rounded-lg text-[10px] font-black uppercase"
+                        :class="reservaEstadoClass(r.estado)">
+                    {{ r.estado }}
+                  </span>
+                </div>
+                <div v-if="r.estado !== 'Cancelada'" class="flex flex-wrap gap-2 mt-3">
+                  <button
+                    v-if="r.estado === 'Pendiente'"
+                    type="button"
+                    :disabled="reservasAccionLoadingId === r.id"
+                    class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wide transition-opacity disabled:opacity-50"
+                    :class="store.isDark
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700'"
+                    @click="vendedorCambiarEstadoReserva(r, 'Confirmada')"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    v-if="r.estado === 'Pendiente' || r.estado === 'Confirmada'"
+                    type="button"
+                    :disabled="reservasAccionLoadingId === r.id"
+                    class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wide transition-opacity border disabled:opacity-50"
+                    :class="store.isDark
+                      ? 'border-red-500/50 text-red-400 hover:bg-red-950/40'
+                      : 'border-red-300 text-red-600 hover:bg-red-50'"
+                    @click="vendedorCambiarEstadoReserva(r, 'Cancelada')"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                <p v-if="r.notas" class="text-xs mt-2 italic"
+                   :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                  "{{ r.notas }}"
+                </p>
+                <p class="text-[10px] mt-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                  Ref. #{{ r.id }} · {{ fmtDateTime(r.creado_en) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer resumen -->
+          <div v-if="reservasModal.list.length"
+               class="px-6 py-4 border-t flex items-center justify-between text-sm flex-shrink-0"
+               :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
+            <span :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+              <strong :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">{{ reservasModal.list.length }}</strong>
+              reserva{{ reservasModal.list.length !== 1 ? 's' : '' }} en total
+            </span>
+            <span class="font-bold" style="color:var(--rp-accent)">
+              {{ reservasModal.list.filter(r => r.estado !== 'Cancelada').length }} activas
+            </span>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- DETAIL EDIT MODAL -->
     <Transition name="slide-up">
       <div v-if="editingItem" class="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
@@ -145,6 +280,76 @@
                   <input v-model.number="editForm.capacidad" type="number" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
                 </div>
               </div>
+
+              <!-- Disponibilidad -->
+              <div
+                class="rounded-2xl p-5 space-y-4 border"
+                :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'"
+              >
+                <div class="flex items-center justify-between">
+                  <p class="field-label mb-0" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponibilidad</p>
+                  <div class="flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                    <span class="inline-flex items-center gap-1.5">
+                      <span class="w-3 h-3 rounded-full bg-emerald-500" /> Disponible
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <span class="w-3 h-3 rounded-full bg-red-500" /> No disponible
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <span class="w-3 h-3 rounded-full" :class="store.isDark ? 'bg-rp-border' : 'bg-gray-300'" /> Fuera de rango
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Rango de fechas -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible desde</label>
+                    <input v-model="editForm.fechaDesde" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible hasta</label>
+                    <input v-model="editForm.fechaHasta" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                </div>
+
+                <!-- Instrucción -->
+                <p class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                  Haz clic en un día <span class="text-emerald-500 font-bold">disponible</span> para marcarlo como
+                  <span class="text-red-500 font-bold">no disponible</span>, y viceversa.
+                  Los días fuera del rango no se pueden seleccionar.
+                </p>
+
+                <!-- Calendario -->
+                <div
+                  v-if="editForm.fechaDesde && editForm.fechaHasta"
+                  class="rounded-xl p-3 overflow-hidden avail-calendar-shell"
+                  :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
+                >
+                  <FullCalendar :key="availCalendarKey" :options="availCalendarOptions" />
+                </div>
+                <p v-else class="text-xs text-center py-4 font-semibold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                  Introduce primero las fechas de inicio y fin para ver el calendario.
+                </p>
+
+                <!-- Resumen fechas no disponibles -->
+                <div v-if="(editForm.fechasNoDisponibles as string[]).length">
+                  <p class="field-label mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                    Días bloqueados ({{ (editForm.fechasNoDisponibles as string[]).length }})
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span
+                      v-for="d in (editForm.fechasNoDisponibles as string[]).slice().sort()"
+                      :key="d"
+                      class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-70"
+                      :class="store.isDark ? 'bg-red-950/40 text-red-400 border border-red-900/40' : 'bg-red-50 text-red-600 border border-red-100'"
+                      @click="(editForm.fechasNoDisponibles as string[]).splice((editForm.fechasNoDisponibles as string[]).indexOf(d), 1)"
+                    >
+                      {{ d }} <X :size="10" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </template>
 
             <!-- RESTAURANTE extra -->
@@ -158,6 +363,78 @@
                   <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Horario</label>
                   <input v-model="editForm.horario" type="text" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
                 </div>
+              </div>
+
+              <!-- Disponibilidad restaurante -->
+              <div class="rounded-2xl p-5 space-y-4 border"
+                   :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
+                <div class="flex items-center justify-between">
+                  <p class="field-label mb-0" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponibilidad</p>
+                  <div class="flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500" /> Disponible</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500" /> No disponible</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full" :class="store.isDark ? 'bg-rp-border' : 'bg-gray-300'" /> Fuera de rango</span>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible desde</label>
+                    <input v-model="editForm.fechaDesde" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible hasta</label>
+                    <input v-model="editForm.fechaHasta" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                </div>
+                <p class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                  Haz clic en un día <span class="text-emerald-500 font-bold">disponible</span> para marcarlo como
+                  <span class="text-red-500 font-bold">no disponible</span>, y viceversa.
+                </p>
+                <div v-if="editForm.fechaDesde && editForm.fechaHasta"
+                     class="rounded-xl p-3 overflow-hidden avail-calendar-shell"
+                     :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
+                  <FullCalendar :key="availCalendarKey" :options="availCalendarOptions" />
+                </div>
+                <p v-else class="text-xs text-center py-4 font-semibold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                  Introduce primero las fechas de inicio y fin para ver el calendario.
+                </p>
+                <div v-if="(editForm.fechasNoDisponibles as string[]).length">
+                  <p class="field-label mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                    Días bloqueados ({{ (editForm.fechasNoDisponibles as string[]).length }})
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span v-for="d in (editForm.fechasNoDisponibles as string[]).slice().sort()" :key="d"
+                          class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-70"
+                          :class="store.isDark ? 'bg-red-950/40 text-red-400 border border-red-900/40' : 'bg-red-50 text-red-600 border border-red-100'"
+                          @click="(editForm.fechasNoDisponibles as string[]).splice((editForm.fechasNoDisponibles as string[]).indexOf(d), 1)">
+                      {{ d }} <X :size="10" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Turnos restaurante -->
+              <div class="rounded-2xl p-5 space-y-3 border"
+                   :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
+                <p class="field-label mb-0" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Turnos disponibles</p>
+                <div class="flex gap-2">
+                  <input v-model="editForm._newTurno" type="time" class="field-input flex-1" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  <button type="button"
+                          class="px-4 py-2 rounded-xl text-sm font-black text-white transition-all"
+                          style="background: var(--rp-accent);"
+                          @click="() => { const t = editForm._newTurno?.trim(); if (t && !(editForm.turnosDisponibles as string[]).includes(t)) { (editForm.turnosDisponibles as string[]).push(t); (editForm.turnosDisponibles as string[]).sort(); editForm._newTurno = ''; } }">
+                    + Añadir
+                  </button>
+                </div>
+                <div v-if="(editForm.turnosDisponibles as string[]).length" class="flex flex-wrap gap-1.5">
+                  <span v-for="t in (editForm.turnosDisponibles as string[])" :key="t"
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-70"
+                        :class="store.isDark ? 'bg-rp-surface border border-rp-border text-rp-text' : 'bg-white border border-gray-200 text-gray-700'"
+                        @click="(editForm.turnosDisponibles as string[]).splice((editForm.turnosDisponibles as string[]).indexOf(t), 1)">
+                    🕐 {{ t }} <X :size="10" />
+                  </span>
+                </div>
+                <p v-else class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">Sin turnos configurados.</p>
               </div>
             </template>
 
@@ -174,6 +451,78 @@
                     <option>Fácil</option><option>Moderada</option><option>Difícil</option><option>Extrema</option>
                   </select>
                 </div>
+              </div>
+
+              <!-- Disponibilidad actividad -->
+              <div class="rounded-2xl p-5 space-y-4 border"
+                   :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
+                <div class="flex items-center justify-between">
+                  <p class="field-label mb-0" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponibilidad</p>
+                  <div class="flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500" /> Disponible</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500" /> No disponible</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full" :class="store.isDark ? 'bg-rp-border' : 'bg-gray-300'" /> Fuera de rango</span>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible desde</label>
+                    <input v-model="editForm.fechaDesde" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                  <div>
+                    <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible hasta</label>
+                    <input v-model="editForm.fechaHasta" type="date" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  </div>
+                </div>
+                <p class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                  Haz clic en un día <span class="text-emerald-500 font-bold">disponible</span> para marcarlo como
+                  <span class="text-red-500 font-bold">no disponible</span>, y viceversa.
+                </p>
+                <div v-if="editForm.fechaDesde && editForm.fechaHasta"
+                     class="rounded-xl p-3 overflow-hidden avail-calendar-shell"
+                     :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
+                  <FullCalendar :key="availCalendarKey" :options="availCalendarOptions" />
+                </div>
+                <p v-else class="text-xs text-center py-4 font-semibold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
+                  Introduce primero las fechas de inicio y fin para ver el calendario.
+                </p>
+                <div v-if="(editForm.fechasNoDisponibles as string[]).length">
+                  <p class="field-label mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                    Días bloqueados ({{ (editForm.fechasNoDisponibles as string[]).length }})
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span v-for="d in (editForm.fechasNoDisponibles as string[]).slice().sort()" :key="d"
+                          class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-70"
+                          :class="store.isDark ? 'bg-red-950/40 text-red-400 border border-red-900/40' : 'bg-red-50 text-red-600 border border-red-100'"
+                          @click="(editForm.fechasNoDisponibles as string[]).splice((editForm.fechasNoDisponibles as string[]).indexOf(d), 1)">
+                      {{ d }} <X :size="10" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Turnos actividad -->
+              <div class="rounded-2xl p-5 space-y-3 border"
+                   :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
+                <p class="field-label mb-0" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Turnos disponibles</p>
+                <div class="flex gap-2">
+                  <input v-model="editForm._newTurno" type="time" class="field-input flex-1" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                  <button type="button"
+                          class="px-4 py-2 rounded-xl text-sm font-black text-white transition-all"
+                          style="background: var(--rp-accent);"
+                          @click="() => { const t = editForm._newTurno?.trim(); if (t && !(editForm.turnosDisponibles as string[]).includes(t)) { (editForm.turnosDisponibles as string[]).push(t); (editForm.turnosDisponibles as string[]).sort(); editForm._newTurno = ''; } }">
+                    + Añadir
+                  </button>
+                </div>
+                <div v-if="(editForm.turnosDisponibles as string[]).length" class="flex flex-wrap gap-1.5">
+                  <span v-for="t in (editForm.turnosDisponibles as string[])" :key="t"
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all hover:opacity-70"
+                        :class="store.isDark ? 'bg-rp-surface border border-rp-border text-rp-text' : 'bg-white border border-gray-200 text-gray-700'"
+                        @click="(editForm.turnosDisponibles as string[]).splice((editForm.turnosDisponibles as string[]).indexOf(t), 1)">
+                    🕐 {{ t }} <X :size="10" />
+                  </span>
+                </div>
+                <p v-else class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">Sin turnos configurados.</p>
               </div>
             </template>
 
@@ -427,7 +776,13 @@
                       class="flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                       style="background: var(--rp-accent);">
                 <Edit3 :size="13" />
-                <span>Editar detalles</span>
+                <span>Editar</span>
+              </button>
+              <button @click="openReservasServicio(item)"
+                      class="flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] border"
+                      :class="store.isDark ? 'border-rp-border text-rp-text hover:border-rp-accent/40 bg-rp-surface-2' : 'border-gray-200 text-gray-700 hover:border-orange-200 bg-gray-50'">
+                <CalendarCheck :size="13" />
+                <span>Reservas</span>
               </button>
               <button @click="toggleStatus(item)"
                       class="w-10 h-10 rounded-xl flex items-center justify-center transition-all border"
@@ -480,12 +835,15 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { misServiciosApi } from '@/services/api'
-import type { Servicio } from '@/services/api'
+import { misServiciosApi, reservasApi } from '@/services/api'
+import type { Servicio, Reserva } from '@/services/api'
 import {
   LayoutGrid, Plus, Search, Edit3, Trash2, Save, X, Copy, Power,
-  MapPin, Star, ImageIcon, Loader2
+  MapPin, Star, ImageIcon, Loader2, CalendarCheck, Calendar, Clock, Users
 } from 'lucide-vue-next'
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
 
 const store = useAppStore()
 
@@ -516,6 +874,11 @@ interface GestionItem {
   duracion?: string
   dificultad?: string
   creadoEn: string
+  // Disponibilidad (alojamiento / actividad / restaurante)
+  fechaDesde?: string
+  fechaHasta?: string
+  fechasNoDisponibles?: string[]
+  turnosDisponibles?: string[]
 }
 
 // ── Mapping helpers ────────────────────────────────────────────────────────────
@@ -543,18 +906,16 @@ function mapServicio(s: Servicio): GestionItem {
     nombre: s.nombre || '',
     descripcion: s.descripcion || '',
     imagen: s.imagen_url || '',
-    ciudad: '',
-    pais: '',
-    direccion: '',
+    ciudad: s.ciudad || '',
+    pais: s.pais || '',
+    direccion: s.direccion || '',
     precio: s.precio_base ?? 0,
-    moneda: 'EUR',
+    moneda: s.moneda || 'EUR',
     unidadPrecio: unidadByCategoria(categoria),
-    valoracion: 0,
-    reseñas: 0,
+    valoracion: s.valoracion != null ? Number(s.valoracion) : 0,
+    reseñas: s.num_resenas ?? 0,
     estado,
-    etiquetas: s.detalle_alojamiento?.servicios_extra
-      ? s.detalle_alojamiento.servicios_extra.split(',').map((t) => t.trim()).filter(Boolean)
-      : [],
+    etiquetas: Array.isArray(s.etiquetas) ? s.etiquetas : [],
     latitud: s.ubicacion_lat ?? 0,
     longitud: s.ubicacion_lon ?? 0,
     creadoEn: new Date().toISOString().slice(0, 10),
@@ -562,6 +923,29 @@ function mapServicio(s: Servicio): GestionItem {
     duracion: s.detalle_actividad?.duracion_estimada
       ? `${s.detalle_actividad.duracion_estimada} min`
       : undefined,
+    fechaDesde: (
+      s.detalle_alojamiento?.fecha_disponible_desde ??
+      s.detalle_actividad?.fecha_disponible_desde ??
+      s.detalle_restauracion?.fecha_disponible_desde ??
+      undefined
+    ),
+    fechaHasta: (
+      s.detalle_alojamiento?.fecha_disponible_hasta ??
+      s.detalle_actividad?.fecha_disponible_hasta ??
+      s.detalle_restauracion?.fecha_disponible_hasta ??
+      undefined
+    ),
+    fechasNoDisponibles: (
+      s.detalle_alojamiento?.fechas_no_disponibles ??
+      s.detalle_actividad?.fechas_no_disponibles ??
+      s.detalle_restauracion?.fechas_no_disponibles ??
+      []
+    ),
+    turnosDisponibles: (
+      s.detalle_actividad?.turnos_disponibles ??
+      s.detalle_restauracion?.turnos_disponibles ??
+      []
+    ),
   }
 }
 
@@ -658,6 +1042,11 @@ function openEdit(item: GestionItem) {
   Object.assign(editForm, {
     ...item,
     etiquetas: item.etiquetas.join(', '),
+    fechaDesde: item.fechaDesde ?? '',
+    fechaHasta: item.fechaHasta ?? '',
+    fechasNoDisponibles: [...(item.fechasNoDisponibles ?? [])],
+    turnosDisponibles: [...(item.turnosDisponibles ?? [])],
+    _newTurno: '',
   })
 }
 
@@ -665,18 +1054,75 @@ function closeEdit() {
   editingItem.value = null
 }
 
-function saveEdit() {
+async function saveEdit() {
   if (!editingItem.value) return
+
+  const servicioId = editingItem.value.id
+  const etiquetas = String(editForm.etiquetas).split(',').map((t: string) => t.trim()).filter(Boolean)
+  const cat = editingItem.value.categoria
+
+  // ── Payload para el backend ──────────────────────────────────────────
+  const payload: Record<string, unknown> = {
+    // Campos de CatalogoServicio
+    nombre:        editForm.nombre,
+    descripcion:   editForm.descripcion,
+    precio_base:   editForm.precio,
+    imagen_url:    editForm.imagen,
+    disponible:    editForm.estado === 'activo',
+    ciudad:        editForm.ciudad,
+    pais:          editForm.pais,
+    direccion:     editForm.direccion,
+    moneda:        editForm.moneda,
+    valoracion:    editForm.valoracion,
+    num_resenas:   editForm.reseñas,
+    etiquetas,
+    ubicacion_lat: editForm.latitud,
+    ubicacion_lon: editForm.longitud,
+  }
+
+  // Campos de disponibilidad (gestión de vendedor: alojamiento / actividad / restaurante)
+  payload.fecha_disponible_desde  = editForm.fechaDesde  || null
+  payload.fecha_disponible_hasta  = editForm.fechaHasta  || null
+  payload.fechas_no_disponibles   = editForm.fechasNoDisponibles ?? []
+
+  // Turnos (actividad + restaurante)
+  if (cat === 'actividad' || cat === 'restaurante') {
+    payload.turnos_disponibles = editForm.turnosDisponibles ?? []
+  }
+
+  // Campos específicos por categoría
+  if (cat === 'alojamiento') {
+    payload.amenidades = editForm.amenidades ?? []
+  }
+  if (cat === 'actividad') {
+    payload.duracion_estimada = editForm.habitaciones   // reutilizado o null
+    payload.dificultad        = editForm.dificultad
+  }
+  if (cat === 'restaurante') {
+    payload.tipo_cocina = editForm.tipoCocina
+    payload.horario     = editForm.horario
+  }
+
+  // ── Actualizar estado local optimistamente ───────────────────────────
   const idx = items.value.findIndex(i => i.id === editingItem.value!.id)
   if (idx !== -1) {
     items.value[idx] = {
       ...editingItem.value,
       ...editForm,
-      etiquetas: String(editForm.etiquetas).split(',').map((t: string) => t.trim()).filter(Boolean),
+      etiquetas,
     } as GestionItem
   }
   closeEdit()
-  showToast('✅', 'Cambios guardados correctamente', 'success')
+  showToast('💾', 'Guardando cambios…', 'success')
+
+  // ── Llamada a la API ─────────────────────────────────────────────────
+  try {
+    await misServiciosApi.update(servicioId, payload)
+    showToast('✅', 'Cambios guardados en el servidor', 'success')
+  } catch (err) {
+    console.error('[RumboPerfecto] Error guardando servicio:', err)
+    showToast('❌', 'Error al guardar en el servidor', 'error')
+  }
 }
 
 function deleteItem(item: GestionItem) {
@@ -717,6 +1163,120 @@ function openNewItemModal() {
   items.value.unshift(blank)
   openEdit(blank)
 }
+
+// ── Reservas del servicio (modal vendedor) ────────────────────────────────────
+const reservasModal = ref<{ open: boolean; item: GestionItem | null; list: Reserva[]; loading: boolean; error: string | null }>({
+  open: false, item: null, list: [], loading: false, error: null,
+})
+const reservasAccionLoadingId = ref<number | null>(null)
+
+async function openReservasServicio(item: GestionItem) {
+  reservasModal.value = { open: true, item, list: [], loading: true, error: null }
+  try {
+    reservasModal.value.list = await reservasApi.getDeServicio(item.id)
+  } catch {
+    reservasModal.value.error = 'No se pudieron cargar las reservas.'
+  } finally {
+    reservasModal.value.loading = false
+  }
+}
+
+function closeReservasModal() { reservasModal.value.open = false }
+
+async function vendedorCambiarEstadoReserva(r: Reserva, estado: 'Confirmada' | 'Cancelada') {
+  const servicioId = reservasModal.value.item?.id
+  if (!servicioId) return
+  if (estado === 'Cancelada') {
+    const ok = window.confirm(
+      '¿Seguro que quieres cancelar esta reserva? El cliente verá el estado como cancelado en su apartado de reservas.'
+    )
+    if (!ok) return
+  }
+  reservasAccionLoadingId.value = r.id
+  try {
+    const updated = await reservasApi.patchEstadoVendedor(servicioId, r.id, estado)
+    const idx = reservasModal.value.list.findIndex((x) => x.id === r.id)
+    if (idx !== -1) reservasModal.value.list.splice(idx, 1, updated)
+    showToast('✅', estado === 'Confirmada' ? 'Reserva confirmada.' : 'Reserva cancelada.', 'success')
+  } catch {
+    showToast('❌', 'No se pudo actualizar el estado.', 'error')
+  } finally {
+    reservasAccionLoadingId.value = null
+  }
+}
+
+function fmtDate(d: string) {
+  if (!d) return '—'
+  const parsed = d.includes('T') ? new Date(d) : new Date(`${d}T12:00:00`)
+  if (Number.isNaN(parsed.getTime())) return '—'
+  return parsed.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function fmtDateTime(iso: string) {
+  if (!iso) return '—'
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) return '—'
+  return parsed.toLocaleString('es-ES', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function reservaEstadoClass(estado: Reserva['estado']) {
+  if (estado === 'Confirmada') return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+  if (estado === 'Cancelada')  return 'bg-red-500/15 text-red-400 border border-red-500/20'
+  return 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+}
+
+// ── Availability calendar (alojamiento) ──────────────────────────────────────
+
+function gestionDateKey(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function isOutsideRange(dateStr: string): boolean {
+  const desde = editForm.fechaDesde as string
+  const hasta = editForm.fechaHasta as string
+  if (!desde || !hasta) return true
+  return dateStr < desde || dateStr > hasta
+}
+
+function handleAvailDateClick(info: { dateStr: string }) {
+  if (isOutsideRange(info.dateStr)) return
+  const list = editForm.fechasNoDisponibles as string[]
+  const idx = list.indexOf(info.dateStr)
+  if (idx === -1) list.push(info.dateStr)
+  else list.splice(idx, 1)
+}
+
+function availDayCellClassNames(arg: { date: Date }) {
+  const dateStr = gestionDateKey(arg.date)
+  if (isOutsideRange(dateStr)) return ['rp-day-outside']
+  const noDisp = editForm.fechasNoDisponibles as string[]
+  if (noDisp.includes(dateStr)) return ['rp-day-blocked']
+  return ['rp-day-free']
+}
+
+const availCalendarKey = computed(() => {
+  const noDisp = (editForm.fechasNoDisponibles as string[] | undefined)?.join(',') ?? ''
+  return `avail-${editForm.fechaDesde}-${editForm.fechaHasta}-${noDisp}`
+})
+
+const availCalendarOptions = computed(() => ({
+  plugins: [dayGridPlugin, interactionPlugin],
+  initialView: 'dayGridMonth',
+  locale: 'es',
+  height: 'auto',
+  fixedWeekCount: false,
+  selectable: false,
+  headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+  events: [],
+  dateClick: handleAvailDateClick,
+  dayCellClassNames: availDayCellClassNames,
+}))
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(icon: string, message: string, type: string) {
@@ -795,4 +1355,48 @@ function showToast(icon: string, message: string, type: string) {
 
 .toast-enter-active, .toast-leave-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+
+/* ── Availability calendar ── */
+:deep(.avail-calendar-shell .fc) { font-family: 'DM Sans', sans-serif; }
+:deep(.avail-calendar-shell .fc-header-toolbar) { margin-bottom: 0.6rem; padding: 0.2rem 0.25rem 0.4rem; }
+:deep(.avail-calendar-shell .fc-toolbar-title) { font-size: 0.9rem; font-weight: 800; text-transform: capitalize; color: var(--rp-text, #374151); }
+:deep(.avail-calendar-shell .fc-button) {
+  background: var(--rp-surface-2, #f9fafb) !important;
+  border: 1px solid var(--rp-border, #e5e7eb) !important;
+  color: var(--rp-muted, #6b7280) !important;
+  border-radius: 8px !important; box-shadow: none !important; padding: 0.15rem 0.4rem !important;
+}
+:deep(.avail-calendar-shell .fc-col-header-cell) { border: 0; background: transparent; padding-bottom: 0.3rem; }
+:deep(.avail-calendar-shell .fc-col-header-cell-cushion) { font-size: 0.7rem; color: var(--rp-muted, #9ca3af); font-weight: 700; text-transform: capitalize; }
+:deep(.avail-calendar-shell .fc-daygrid-day),
+:deep(.avail-calendar-shell .fc-scrollgrid),
+:deep(.avail-calendar-shell .fc-scrollgrid td),
+:deep(.avail-calendar-shell .fc-scrollgrid th) { border: 0 !important; }
+:deep(.avail-calendar-shell .fc-day-today) { background: transparent !important; }
+:deep(.avail-calendar-shell .fc-daygrid-day-frame) { min-height: 38px; display: flex; align-items: center; justify-content: center; }
+:deep(.avail-calendar-shell .fc-daygrid-day-number) {
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.8rem; font-weight: 600; transition: all 0.15s;
+}
+:deep(.avail-calendar-shell .fc-day-other .fc-daygrid-day-number) { opacity: 0.25; }
+
+/* Fuera del rango disponible */
+:deep(.avail-calendar-shell .rp-day-outside .fc-daygrid-day-number) {
+  color: var(--rp-muted, #9ca3af); cursor: default; opacity: 0.35;
+}
+/* Disponible (verde) */
+:deep(.avail-calendar-shell .rp-day-free .fc-daygrid-day-number) {
+  background: rgba(16,185,129,0.15); color: #059669; cursor: pointer; font-weight: 700;
+}
+:deep(.avail-calendar-shell .rp-day-free .fc-daygrid-day-number:hover) {
+  background: rgba(239,68,68,0.15); color: #dc2626;
+}
+/* No disponible (rojo) */
+:deep(.avail-calendar-shell .rp-day-blocked .fc-daygrid-day-number) {
+  background: rgba(239,68,68,0.2); color: #dc2626; cursor: pointer; font-weight: 700;
+  text-decoration: line-through; opacity: 0.8;
+}
+:deep(.avail-calendar-shell .rp-day-blocked .fc-daygrid-day-number:hover) {
+  background: rgba(16,185,129,0.15); color: #059669; text-decoration: none;
+}
 </style>

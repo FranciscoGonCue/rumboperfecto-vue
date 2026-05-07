@@ -191,17 +191,33 @@
               </p>
             </div>
 
-            <!-- Add to plan button -->
-            <button
-              class="w-full mt-2 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="store.isDark
-                ? 'bg-rp-accent text-white shadow-[0_8px_24px_rgba(249,115,22,0.3)] hover:bg-orange-500 hover:shadow-[0_12px_32px_rgba(249,115,22,0.4)]'
-                : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-[0_14px_30px_rgba(249,115,22,0.35)] hover:from-orange-600 hover:to-orange-700'"
-              :disabled="!canCalculatePrice"
-              @click="openAddToPlanModal"
-            >
-              Añadir a plan
-            </button>
+            <!-- Action buttons -->
+            <div class="flex gap-3 mt-2">
+              <!-- Reservar -->
+              <button
+                class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="store.isDark
+                  ? 'bg-emerald-600 text-white shadow-[0_8px_24px_rgba(5,150,105,0.3)] hover:bg-emerald-500'
+                  : 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-[0_14px_30px_rgba(5,150,105,0.3)]'"
+                :disabled="!canCalculatePrice || bookingLoading || booked"
+                @click="handleBook"
+              >
+                <span v-if="bookingLoading">Reservando…</span>
+                <span v-else-if="booked">✓ ¡Reservado!</span>
+                <span v-else>Reservar</span>
+              </button>
+              <!-- Añadir a plan -->
+              <button
+                class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="store.isDark
+                  ? 'bg-rp-accent text-white shadow-[0_8px_24px_rgba(249,115,22,0.3)] hover:bg-orange-500 hover:shadow-[0_12px_32px_rgba(249,115,22,0.4)]'
+                  : 'bg-gradient-to-r from-rumbo-orange to-orange-600 text-white shadow-[0_14px_30px_rgba(249,115,22,0.35)] hover:from-orange-600 hover:to-orange-700'"
+                :disabled="!canCalculatePrice"
+                @click="openAddToPlanModal"
+              >
+                Añadir a plan
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -316,15 +332,20 @@ import { computed, ref, watch } from 'vue'
 import { ArrowLeft } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { accommodationsMock } from '@/mocks/accommodations'
+import { reservasApi } from '@/services/api'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import type { Activity } from '@/types'
+import type { Activity, Accommodation } from '@/types'
+
+const props = defineProps<{ accommodation?: Accommodation }>()
 
 const store = useAppStore()
 
 const selectedAccommodation = computed(() =>
-  accommodationsMock.find(item => item.id === store.selectedAccommodationId) ?? null
+  props.accommodation
+  ?? accommodationsMock.find(item => item.id === store.selectedAccommodationId)
+  ?? null
 )
 
 const checkInDate = ref('')
@@ -473,6 +494,37 @@ function resetSelection() {
   checkInDate.value = ''
   checkOutDate.value = ''
   selectionError.value = ''
+}
+
+const booked = ref(false)
+const bookingLoading = ref(false)
+
+async function handleBook() {
+  if (!canCalculatePrice.value || !selectedAccommodation.value) return
+  bookingLoading.value = true
+  try {
+    await reservasApi.crear({
+      servicio:     selectedAccommodation.value.id,
+      fecha_inicio: checkInDate.value,
+      fecha_fin:    checkOutDate.value,
+      personas:     1,
+      precio_total: nightsCount.value * (selectedAccommodation.value?.pricePerNight ?? 0),
+    })
+    booked.value = true
+    // Bloquear fechas localmente para que el calendario se actualice
+    const acc = selectedAccommodation.value
+    const cursor = new Date(checkInDate.value)
+    const end    = new Date(checkOutDate.value)
+    while (cursor <= end) {
+      const iso = cursor.toISOString().split('T')[0]
+      if (!acc.unavailableDates.includes(iso)) acc.unavailableDates.push(iso)
+      cursor.setDate(cursor.getDate() + 1)
+    }
+  } catch {
+    selectionError.value = 'Error al crear la reserva. Inténtalo de nuevo.'
+  } finally {
+    bookingLoading.value = false
+  }
 }
 
 function openAddToPlanModal() {

@@ -57,6 +57,13 @@
             @click="store.setCurrentView('gestion')"
           />
           <DesktopNavLink
+            :active="store.currentView === 'reservas'"
+            :dark="store.isDark"
+            label="Reservas"
+            :icon="CalendarCheck"
+            @click="store.setCurrentView('reservas')"
+          />
+          <DesktopNavLink
             :active="store.currentView === 'perfil'"
             :dark="store.isDark"
             label="Perfil"
@@ -84,9 +91,24 @@
 
       <!-- MAIN CONTENT AREA -->
       <main class="flex-1 w-full max-w-none mx-0 min-h-[50vh]">
+        <ServiceDetailView
+          v-if="store.currentView === 'servicio'"
+          :key="store.selectedServicioId ?? ''"
+        />
+        <!-- Loading mientras se fetchea el servicio -->
+        <div
+          v-else-if="store.selectedServicioLoading"
+          class="flex items-center justify-center min-h-[60vh]"
+        >
+          <div class="flex flex-col items-center gap-4 opacity-60">
+            <div class="w-10 h-10 rounded-full border-4 border-rp-accent border-t-transparent animate-spin" />
+            <span class="text-sm font-bold uppercase tracking-widest">Cargando servicio…</span>
+          </div>
+        </div>
         <AccommodationDetailView
-          v-if="store.currentView === 'alojamiento'"
-          :key="store.currentView"
+          v-else-if="store.currentView === 'alojamiento'"
+          :key="store.currentView + ':' + (store.selectedServicioId ?? store.selectedAccommodationId ?? 'default')"
+          :accommodation="selectedAccommodation ?? undefined"
         />
         <TransportDetailView
           v-else-if="store.currentView === 'transporte'"
@@ -106,7 +128,6 @@
         <component
           v-else
           :is="currentViewComponent"
-          :key="store.currentView"
         />
       </main>
 
@@ -141,6 +162,13 @@
             @click="store.setCurrentView('gestion')"
           />
           <NavButton
+            :is-active="store.currentView === 'reservas'"
+            :dark="store.isDark"
+            :icon="CalendarCheck"
+            label="Reservas"
+            @click="store.setCurrentView('reservas')"
+          />
+          <NavButton
             :is-active="store.currentView === 'perfil'"
             :dark="store.isDark"
             :icon="User"
@@ -157,16 +185,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Home, Calendar, User, Plane, Plus, LayoutGrid } from 'lucide-vue-next'
+import { Home, Calendar, User, Plane, Plus, LayoutGrid, CalendarCheck } from 'lucide-vue-next'
 import AuthView from '@/views/AuthView.vue'
 import HomeView from '@/views/HomeView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import GestionView from '@/views/GestionView.vue'
+import ReservasView from '@/views/ReservasView.vue'
 import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
 import TransportDetailView from '@/views/TransportDetailView.vue'
 import ActivityDetailView from '@/views/ActivityDetailView.vue'
 import RestaurantDetailView from '@/views/RestaurantDetailView.vue'
+import ServiceDetailView from '@/views/ServiceDetailView.vue'
 import DesktopNavLink from '@/components/DesktopNavLink.vue'
 import NavButton from '@/components/NavButton.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -174,29 +204,44 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import { transportsMock } from '@/mocks/transport'
 import { activitiesMock } from '@/mocks/activities'
 import { restaurantsMock } from '@/mocks/restaurants'
+import {
+  servicioToAccommodation,
+  servicioToActivity,
+  servicioToRestaurant,
+  servicioToTransport,
+} from '@/services/api'
 
 const store = useAppStore()
 const showSplash = ref(true)
 
 const selectedTransport = computed(() => {
+  if (store.selectedServicio) return servicioToTransport(store.selectedServicio)
   const id = store.selectedTransportId
   return transportsMock.find((t) => t.id === id) ?? transportsMock[0]
 })
 
 const selectedActivity = computed(() => {
+  if (store.selectedServicio) return servicioToActivity(store.selectedServicio)
   const id = store.selectedActivityId
   return activitiesMock.find((a) => a.id === id) ?? activitiesMock[0]
 })
 
 const selectedRestaurant = computed(() => {
+  if (store.selectedServicio) return servicioToRestaurant(store.selectedServicio)
   const id = store.selectedRestaurantId
   return restaurantsMock.find((r) => r.id === id) ?? restaurantsMock[0]
+})
+
+const selectedAccommodation = computed(() => {
+  if (store.selectedServicio) return servicioToAccommodation(store.selectedServicio)
+  return null
 })
 
 const currentViewComponent = computed(() => {
   if (store.currentView === 'plan') return PlannerView
   if (store.currentView === 'perfil') return ProfileView
   if (store.currentView === 'gestion') return GestionView
+  if (store.currentView === 'reservas') return ReservasView
   return HomeView
 })
 

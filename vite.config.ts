@@ -1,8 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+  },
   plugins: [vue()],
   // Reduce "Outdated Optimize Dep" / 504 al cambiar deps o reinicios raros del dev server
   optimizeDeps: {

@@ -15,6 +15,11 @@ export type RestaurantMock = {
   specialties: string[]
   tags: string[]
   schedule: Record<string, string>
+  availableShifts: string[]
+  occupiedShiftsByDate: Record<string, string[]>
+  availableFrom: string
+  availableTo: string
+  unavailableDates: string[]
 }
 
 export const restaurantsMock: RestaurantMock[] = [
@@ -45,6 +50,7 @@ export const restaurantsMock: RestaurantMock[] = [
       Sáb: '13:00–16:30 · 20:00–00:00',
       Dom: '13:00–16:00',
     },
+    availableShifts: [], occupiedShiftsByDate: {}, availableFrom: '', availableTo: '', unavailableDates: [],
   },
   {
     id: 'r-2',
@@ -73,6 +79,7 @@ export const restaurantsMock: RestaurantMock[] = [
       Sáb: '12:30–16:30 · 19:30–00:00',
       Dom: '12:30–16:00',
     },
+    availableShifts: [], occupiedShiftsByDate: {}, availableFrom: '', availableTo: '', unavailableDates: [],
   },
   {
     id: 'r-3',
@@ -101,6 +108,7 @@ export const restaurantsMock: RestaurantMock[] = [
       Sáb: '13:00–16:30 · 20:00–23:30',
       Dom: '13:00–16:00 · 20:00–22:30',
     },
+    availableShifts: [], occupiedShiftsByDate: {}, availableFrom: '', availableTo: '', unavailableDates: [],
   },
 ]
 

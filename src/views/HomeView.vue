@@ -6,9 +6,9 @@
       :class="[
         mapExpanded 
           ? 'h-screen w-full lg:w-[75%]' 
-          : (isMobile ? 'h-[25vh]' : (mapCollapsed ? 'lg:h-full lg:w-0' : 'lg:h-full lg:w-[20%]'))
+          : (isMobile ? (mobileMapHidden ? 'h-0' : 'h-[25vh]') : (mapCollapsed ? 'lg:h-full lg:w-0' : 'lg:h-full lg:w-[20%]'))
       ]"
-      :style="(!mapExpanded && !isMobile && mapCollapsed) ? 'pointer-events:none;' : ''"
+      :style="(!mapExpanded && ((!isMobile && mapCollapsed) || (isMobile && mobileMapHidden))) ? 'pointer-events:none;' : ''"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
@@ -329,7 +329,6 @@
           </div>
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <TransitionGroup name="feed">
               <div
                 v-for="item in filteredItems"
                 :key="item.id"
@@ -340,13 +339,22 @@
                 @click="openItemDetail(item)"
               >
                 <div class="relative h-56 overflow-hidden">
+                  <!-- Imagen real -->
                   <img
+                    v-if="item.img"
                     :src="item.img"
                     :alt="item.title"
                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    @error="($event.target as HTMLImageElement).style.display='none'"
                   />
-                  <!-- Gradient overlay on dark -->
-                  <div v-if="store.isDark" class="absolute inset-0 bg-gradient-to-t from-rp-surface/40 to-transparent" />
+                  <!-- Placeholder cuando no hay imagen -->
+                  <div v-if="!item.img" class="w-full h-full flex flex-col items-center justify-center gap-3"
+                    :style="`background: linear-gradient(135deg, ${feedKindColor(item.kind)}22, ${feedKindColor(item.kind)}44)`">
+                    <component :is="feedKindIcon(item.kind)" :size="44" :style="`color:${feedKindColor(item.kind)}`" class="opacity-60" />
+                    <span class="text-xs font-black uppercase tracking-widest opacity-40">{{ feedKindLabel(item.kind) }}</span>
+                  </div>
+                  <!-- Gradient overlay -->
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
                   <div class="absolute top-4 left-4 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center space-x-1 shadow-md"
                        :style="store.isDark ? 'background: rgba(17,17,24,0.85); border: 1px solid rgba(255,255,255,0.1);' : 'background: rgba(255,255,255,0.9);'">
                     <Star :size="11" class="fill-orange-500 text-orange-500" />
@@ -394,7 +402,6 @@
                   </div>
                 </div>
               </div>
-            </TransitionGroup>
           </div><!-- fin v-else grid -->
         </div>
       </div>
@@ -507,11 +514,12 @@
               ? 'hover:bg-rp-surface-2'
               : 'hover:bg-orange-50'"
           >
-            <img 
-              :src="item.img" 
-              :alt="item.title"
-              class="w-14 h-14 rounded-lg object-cover shadow-sm"
-            />
+            <div class="w-14 h-14 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
+              <img v-if="item.img" :src="item.img" :alt="item.title" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'" />
+              <div v-if="!item.img" class="w-full h-full flex items-center justify-center" :style="`background:${feedKindColor(item.kind)}22`">
+                <component :is="feedKindIcon(item.kind)" :size="20" :style="`color:${feedKindColor(item.kind)}`" class="opacity-60" />
+              </div>
+            </div>
             <div class="flex-1 text-left">
               <div class="font-bold text-xs uppercase tracking-tight mb-1"
                    :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">{{ item.title }}</div>
@@ -648,11 +656,12 @@
                 class="w-full flex items-start space-x-3 p-3 rounded-xl transition-all"
                 :class="store.isDark ? 'hover:bg-rp-surface-2' : 'hover:bg-orange-50'"
               >
-                <img 
-                  :src="item.img" 
-                  :alt="item.title"
-                  class="w-12 h-12 rounded-lg object-cover"
-                />
+                <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                  <img v-if="item.img" :src="item.img" :alt="item.title" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'" />
+                  <div v-if="!item.img" class="w-full h-full flex items-center justify-center" :style="`background:${feedKindColor(item.kind)}22`">
+                    <component :is="feedKindIcon(item.kind)" :size="16" :style="`color:${feedKindColor(item.kind)}`" class="opacity-60" />
+                  </div>
+                </div>
                 <div class="flex-1 text-left">
                   <div class="font-bold text-xs uppercase tracking-tight mb-1"
                        :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">{{ item.title }}</div>
@@ -686,6 +695,7 @@
         class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1999]"
       />
     </Transition>
+
   </div>
 </template>
 
@@ -693,7 +703,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Hotel, Compass, Utensils, Plane, Heart, MapPin, Star, X, Globe, Navigation, Layers, Menu, Calendar, Users, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { useAppStore } from '@/stores/app'
 import { type Servicio } from '@/services/api'
 
@@ -763,32 +772,56 @@ function extractCity(nombre: string | null): string {
   return words[words.length - 1] ?? 'España'
 }
 
+function normalizeTipo(t: string): string {
+  return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function resolveTipoMap(tipo: string, s: Servicio): { category: FeedCategory; kind: FeedKind } {
+  // Exact match first
+  if (TIPO_MAP[tipo]) return TIPO_MAP[tipo]
+  // Fuzzy match insensible a tildes y mayúsculas
+  const n = normalizeTipo(tipo)
+  if (n.includes('alojamiento') || n.includes('hotel')) return { category: 'Alojamiento', kind: 'accommodation' }
+  if (n.includes('restaur') || n.includes('comida') || n.includes('gastro')) return { category: 'Comida', kind: 'restaurant' }
+  if (n.includes('transporte') || n.includes('vuelo') || n.includes('tren') || n.includes('bus')) return { category: 'Transporte', kind: 'transport' }
+  if (n.includes('actividad') || n.includes('aventura') || n.includes('tour') || n.includes('excursion')) return { category: 'Aventuras', kind: 'activity' }
+  // Fallback por subtipo de detalle presente en el servicio
+  if (s.detalle_alojamiento) return { category: 'Alojamiento', kind: 'accommodation' }
+  if (s.detalle_restauracion) return { category: 'Comida', kind: 'restaurant' }
+  if (s.detalle_transporte) return { category: 'Transporte', kind: 'transport' }
+  if (s.detalle_actividad) return { category: 'Aventuras', kind: 'activity' }
+  return { category: 'Aventuras', kind: 'activity' }
+}
+
 function servicioToFeedItem(s: Servicio): FeedItem | null {
-  if (s.ubicacion_lat == null || s.ubicacion_lon == null) return null
-  const tipo = s.tipo?.nombre_tipo ?? ''
-  const map = TIPO_MAP[tipo]
-  if (!map) return null
+  try {
+    const tipo = s.tipo?.nombre_tipo ?? ''
+    const mapped = resolveTipoMap(tipo, s)
 
-  const precio = (s.precio_base ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 0 })
-  const rating =
-    s.detalle_alojamiento?.estrellas ??
-    (s.detalle_actividad?.guia_incluido != null ? 4.5 : 4.2)
+    const precio = Number(s.precio_base ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 0 })
+    const rating = s.valoracion != null
+      ? Number(s.valoracion)
+      : (s.detalle_alojamiento?.estrellas ?? 4.2)
 
-  return {
-    id: `api-${s.id_servicio}`,
-    kind: map.kind,
-    title: s.nombre ?? 'Sin nombre',
-    price: `${precio} €`,
-    rating,
-    category: map.category,
-    img: s.imagen_url ?? '',
-    city: extractCity(s.nombre),
-    country: 'España',
-    availableFrom: '2026-01-01',
-    availableTo: '2026-12-31',
-    unavailableDates: s.disponible === false ? ['2026-12-31'] : [],
-    lat: s.ubicacion_lat,
-    lng: s.ubicacion_lon,
+    return {
+      id: `api-${s.id_servicio}`,
+      kind: mapped.kind,
+      title: s.nombre ?? 'Sin nombre',
+      price: `${precio} €`,
+      rating,
+      category: mapped.category,
+      img: s.imagen_url ?? '',
+      city: s.ciudad ?? extractCity(s.nombre),
+      country: s.pais ?? 'España',
+      availableFrom: '2026-01-01',
+      availableTo: '2026-12-31',
+      unavailableDates: s.disponible === false ? ['2026-12-31'] : [],
+      lat: s.ubicacion_lat ?? 0,
+      lng: s.ubicacion_lon ?? 0,
+    }
+  } catch (err) {
+    console.warn('[RumboPerfecto] Error procesando servicio:', s?.id_servicio, err)
+    return null
   }
 }
 
@@ -809,6 +842,7 @@ const showMobileSidebar = ref(false)
 const isMobile = ref(false)
 const isExitingMapMode = ref(false)
 const mapCollapsed = ref(true)
+const mobileMapHidden = ref(true)
 
 watch(mapExpanded, (expanded) => {
   document.documentElement.classList.toggle('map-expanded', expanded)
@@ -848,7 +882,6 @@ const guestsLabel = computed(() => `${guests.value}`)
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function checkIsMobile() {
   isMobile.value = window.innerWidth < 1024
-  if (isMobile.value) mapCollapsed.value = false
 }
 
 function handleTouchStart(event: TouchEvent) {
@@ -893,7 +926,25 @@ function toggleFavorite(id: string) {
   else favorites.value.push(id)
 }
 
-function openItemDetail(_item: FeedItem) { /* detalle futuro */ }
+function openItemDetail(item: FeedItem) {
+  const raw = item.id.startsWith('api-') ? item.id.slice(4) : item.id
+  console.log('[RumboPerfecto] openItemDetail id:', raw, 'raw item.id:', item.id)
+  if (raw) {
+    store.openServiceDetail(raw)
+  } else {
+    console.warn('[RumboPerfecto] ID inválido:', item.id)
+  }
+}
+
+function feedKindLabel(kind: FeedKind) {
+  return { accommodation: 'Alojamiento', activity: 'Actividad', restaurant: 'Restaurante', transport: 'Transporte' }[kind] ?? kind
+}
+function feedKindColor(kind: FeedKind) {
+  return { accommodation: '#3b82f6', activity: '#10b981', restaurant: '#ef4444', transport: '#6366f1' }[kind] ?? '#f97316'
+}
+function feedKindIcon(kind: FeedKind) {
+  return { accommodation: Hotel, activity: Compass, restaurant: Utensils, transport: Plane }[kind] ?? Compass
+}
 
 function exitMapMode() {
   isExitingMapMode.value = true
@@ -1056,13 +1107,16 @@ function initMap() {
       maxZoom: 19,
     }).addTo(map)
 
-    if (!isMobile.value) {
-      map.on('movestart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
-      map.on('zoomstart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
-      map.on('click',     () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
-    }
-
-    setTimeout(() => map?.invalidateSize(), 100)
+    setTimeout(() => {
+      map?.invalidateSize()
+      // Adjuntar listeners DESPUÉS del invalidateSize inicial para evitar
+      // que el resize del contenedor dispare mapExpanded accidentalmente
+      if (!isMobile.value) {
+        map?.on('movestart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
+        map?.on('zoomstart', () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
+        map?.on('click',     () => { if (!mapExpanded.value && !isExitingMapMode.value) mapExpanded.value = true })
+      }
+    }, 300)
   } catch (e) {
     console.error('[HomeView] Error al inicializar Leaflet', e)
   }
@@ -1075,7 +1129,9 @@ async function loadServicios() {
   try {
     const res = await fetch(url, { headers: { Accept: 'application/json' } })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const servicios: Servicio[] = await res.json()
+    const body = await res.json()
+    // Soportar tanto array plano como respuesta paginada { results: [...] }
+    const servicios: Servicio[] = Array.isArray(body) ? body : (body.results ?? [])
 
     const items = servicios.map(servicioToFeedItem).filter((i): i is FeedItem => i !== null)
     apiServiciosFeedItems.value = items
@@ -1271,4 +1327,22 @@ body:has(.slide-right-enter-active),
 body:has(.slide-right-leave-active) {
   overflow: hidden;
 }
+
+/* ── SERVICE DETAIL SHEET ── */
+.feed-detail-card { box-shadow: 0 -8px 40px rgba(0,0,0,0.3); }
+.feed-kind-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 99px;
+  font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em;
+  color: #fff;
+}
+.feed-action-btn { cursor: pointer; transition: all .15s; }
+.feed-action-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+.feed-sheet-enter-active { transition: all .3s cubic-bezier(.34,1.1,.64,1); }
+.feed-sheet-leave-active { transition: all .2s ease; }
+.feed-sheet-enter-from { opacity: 0; }
+.feed-sheet-leave-to { opacity: 0; }
+.feed-sheet-enter-from .feed-detail-card { transform: translateY(40px) scale(.97); }
+.feed-sheet-leave-to .feed-detail-card { transform: translateY(20px); }
 </style>

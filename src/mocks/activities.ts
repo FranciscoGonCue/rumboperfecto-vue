@@ -19,6 +19,11 @@ export type ActivityMock = {
   requirements: string[]
   tags: string[]
   availableShifts: string[]
+  /** Fecha YYYY-MM-DD → turnos ya reservados (API: turnos_ocupados) */
+  occupiedShiftsByDate: Record<string, string[]>
+  availableFrom: string
+  availableTo: string
+  unavailableDates: string[]
 }
 
 export const activitiesMock: ActivityMock[] = [
@@ -43,6 +48,8 @@ export const activitiesMock: ActivityMock[] = [
     requirements: ['Avisa alergias con antelación'],
     tags: ['Local', 'Top ventas', 'Ideal parejas'],
     availableShifts: ['10:30', '12:00', '17:30', '19:00'],
+    occupiedShiftsByDate: {},
+    availableFrom: '', availableTo: '', unavailableDates: [],
   },
   {
     id: 'a-2',
@@ -65,6 +72,8 @@ export const activitiesMock: ActivityMock[] = [
     requirements: ['Calzado cómodo'],
     tags: ['Atardecer', 'Fotos', 'Suave'],
     availableShifts: ['18:00', '18:30', '19:00'],
+    occupiedShiftsByDate: {},
+    availableFrom: '', availableTo: '', unavailableDates: [],
   },
   {
     id: 'a-3',
@@ -87,6 +96,8 @@ export const activitiesMock: ActivityMock[] = [
     requirements: ['Agua 1L', 'Protector solar'],
     tags: ['Outdoor', 'Vistas', 'Activo'],
     availableShifts: ['09:00', '09:30'],
+    occupiedShiftsByDate: {},
+    availableFrom: '', availableTo: '', unavailableDates: [],
   },
 ]
 

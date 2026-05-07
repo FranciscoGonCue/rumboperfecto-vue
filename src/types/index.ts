@@ -19,10 +19,12 @@ export type View =
   | 'plan'
   | 'perfil'
   | 'gestion'
+  | 'reservas'
   | 'alojamiento'
   | 'transporte'
   | 'actividad'
   | 'restaurante'
+  | 'servicio'
 
 export interface User {
   id: string
@@ -74,6 +76,8 @@ export interface ItemPlan {
   nombre_servicio: string | null
   tipo: number | null
   tipo_nombre: string | null
+  /** Si viene de «Mis reservas», vincula al id de la reserva (solo un ítem por reserva). */
+  reserva_id?: number | null
   fecha_hora_inicio: string | null
   fecha_hora_fin: string | null
   precio_estimado: number | null

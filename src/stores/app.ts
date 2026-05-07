@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { activitiesApi, authApi, plansApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
+import { activitiesApi, authApi, detectServicioView, plansApi, serviciosApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
+import type { Servicio } from '@/services/api'
 import type { Activity, PlanViaje, Trip, User, View } from '@/types'
 
 const THEME_STORAGE_KEY = 'rumbo_theme'
@@ -65,6 +66,9 @@ export const useAppStore = defineStore('app', () => {
   const selectedTransportId = ref<string | null>(null)
   const selectedActivityId = ref<string | null>(null)
   const selectedRestaurantId = ref<string | null>(null)
+  const selectedServicioId = ref<string | null>(null)
+  const selectedServicio = ref<Servicio | null>(null)
+  const selectedServicioLoading = ref(false)
 
   const bootstrapping = ref(false)
   const tripsLoading = ref(false)
@@ -90,6 +94,7 @@ export const useAppStore = defineStore('app', () => {
 
   function closeAccommodationDetail(): void {
     selectedAccommodationId.value = null
+    selectedServicio.value = null
     currentView.value = 'inicio'
   }
 
@@ -100,6 +105,7 @@ export const useAppStore = defineStore('app', () => {
 
   function closeTransportDetail(): void {
     selectedTransportId.value = null
+    selectedServicio.value = null
     currentView.value = 'inicio'
   }
 
@@ -110,6 +116,7 @@ export const useAppStore = defineStore('app', () => {
 
   function closeActivityDetail(): void {
     selectedActivityId.value = null
+    selectedServicio.value = null
     currentView.value = 'inicio'
   }
 
@@ -120,6 +127,33 @@ export const useAppStore = defineStore('app', () => {
 
   function closeRestaurantDetail(): void {
     selectedRestaurantId.value = null
+    selectedServicio.value = null
+    currentView.value = 'inicio'
+  }
+
+  async function openServiceDetail(id: string): Promise<void> {
+    console.log('[RumboPerfecto] openServiceDetail id:', id)
+    selectedServicioId.value = id
+    selectedServicio.value = null
+    selectedServicioLoading.value = true
+    currentView.value = 'servicio'
+    try {
+      const svc = await serviciosApi.getOne(id)
+      console.log('[RumboPerfecto] servicio recibido:', svc?.nombre)
+      selectedServicio.value = svc
+      currentView.value = detectServicioView(svc)
+    } catch (err) {
+      console.error('[RumboPerfecto] Error cargando servicio', id, ':', err)
+      selectedServicio.value = null
+      currentView.value = 'servicio'
+    } finally {
+      selectedServicioLoading.value = false
+    }
+  }
+
+  function closeServiceDetail(): void {
+    selectedServicioId.value = null
+    selectedServicio.value = null
     currentView.value = 'inicio'
   }
 
@@ -192,6 +226,7 @@ export const useAppStore = defineStore('app', () => {
         alojamientos,
         actividades,
         restaurantes,
+        planings: [],
       })
       authApi.saveSession(session.access, session.refresh)
       user.value = session.user
@@ -409,6 +444,9 @@ export const useAppStore = defineStore('app', () => {
     selectedTransportId,
     selectedActivityId,
     selectedRestaurantId,
+    selectedServicioId,
+    selectedServicio,
+    selectedServicioLoading,
     theme,
     trips,
     planes,
@@ -431,6 +469,8 @@ export const useAppStore = defineStore('app', () => {
     closeActivityDetail,
     openRestaurantDetail,
     closeRestaurantDetail,
+    openServiceDetail,
+    closeServiceDetail,
     setTheme,
     toggleTheme,
     loadThemeFromStorage,

@@ -201,7 +201,15 @@
               Comprar billetes
             </h3>
 
-            <!-- Fecha y hora de salida -->
+            <!-- Calendario de selección de fecha -->
+            <div
+              class="rounded-2xl p-3 overflow-hidden rp-calendar-shell"
+              :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
+            >
+              <FullCalendar :key="calendarKey" :options="calendarOptions" />
+            </div>
+
+            <!-- Fecha seleccionada + Hora -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 class="rounded-xl p-3 transition-colors"
@@ -210,13 +218,9 @@
                 <p class="text-xs font-bold uppercase tracking-wider mb-1" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                   Fecha de salida
                 </p>
-                <input
-                  v-model="departureDate"
-                  type="date"
-                  class="w-full outline-none text-sm font-bold bg-transparent"
-                  :style="store.isDark ? 'color: var(--rp-text);' : 'color: #111827;'"
-                  :min="today"
-                />
+                <p class="font-bold text-sm" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+                  {{ departureDate ? formatDate(departureDate) : 'Selecciona una fecha' }}
+                </p>
               </div>
               <div
                 class="rounded-xl p-3 transition-colors"
@@ -305,29 +309,117 @@
 
             <div v-if="bookingError" class="text-sm text-red-400 font-semibold">{{ bookingError }}</div>
 
-            <button
-              class="w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="store.isDark
-                ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.3)] hover:bg-blue-500 hover:shadow-[0_12px_32px_rgba(37,99,235,0.4)]'
-                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-[0_14px_30px_rgba(37,99,235,0.3)] hover:from-blue-600 hover:to-indigo-700'"
-              :disabled="!canBook"
-              @click="handleBook"
-            >
-              <span v-if="!booked">Comprar billetes</span>
-              <span v-else>✓ Billetes confirmados</span>
-            </button>
+            <div class="flex gap-3">
+              <button
+                class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="store.isDark
+                  ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.3)] hover:bg-blue-500 hover:shadow-[0_12px_32px_rgba(37,99,235,0.4)]'
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-[0_14px_30px_rgba(37,99,235,0.3)] hover:from-blue-600 hover:to-indigo-700'"
+                :disabled="!canBook"
+                @click="handleBook"
+              >
+                <span v-if="!booked">Comprar billetes</span>
+                <span v-else>✓ Billetes confirmados</span>
+              </button>
+
+              <button
+                class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                :class="store.isDark
+                  ? 'bg-rp-accent text-white shadow-[0_8px_24px_rgba(249,115,22,0.3)] hover:bg-orange-500 hover:shadow-[0_12px_32px_rgba(249,115,22,0.4)]'
+                  : 'bg-gradient-to-r from-rp-accent to-orange-600 text-white shadow-[0_14px_30px_rgba(249,115,22,0.3)] hover:from-orange-600 hover:to-orange-700'"
+                :disabled="!departureDate"
+                @click="openAddToPlanModal"
+              >
+                <BookmarkPlus :size="16" />
+                <span>Añadir a plan</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Plan selector modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="showPlanSelectorModal"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        @click.self="showPlanSelectorModal = false"
+      >
+        <div
+          class="rounded-[28px] p-6 max-w-lg w-full shadow-2xl transition-colors"
+          :class="store.isDark
+            ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.7)]'
+            : 'bg-white border border-orange-100'"
+        >
+          <h3
+            class="text-xl font-black uppercase tracking-tight mb-2"
+            :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
+            style="font-family: 'Syne', sans-serif;"
+          >Selecciona un plan</h3>
+          <p class="text-sm mb-5" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+            Elige el viaje donde quieres añadir este transporte.
+          </p>
+
+          <div
+            v-if="store.trips.length === 0"
+            class="rounded-xl p-4 text-sm transition-colors"
+            :class="store.isDark
+              ? 'bg-rp-surface-2 border border-rp-border text-rp-muted'
+              : 'border border-gray-200 bg-gray-50 text-gray-600'"
+          >
+            No tienes planes creados todavía. Crea uno primero desde la vista Plan.
+          </div>
+
+          <div v-else class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <button
+              v-for="trip in store.trips"
+              :key="trip.id"
+              class="w-full text-left p-4 rounded-xl border-2 transition-all"
+              :class="selectedPlanId === trip.id
+                ? store.isDark ? 'border-rp-accent bg-orange-950/20' : 'border-rp-accent bg-orange-50'
+                : store.isDark ? 'border-rp-border hover:border-rp-accent/40 bg-rp-surface-2' : 'border-gray-200 hover:border-orange-200'"
+              @click="selectedPlanId = trip.id"
+            >
+              <p class="font-bold uppercase text-sm tracking-wide" :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">{{ trip.title }}</p>
+              <p class="text-xs mt-1" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
+                {{ trip.startDate }} — {{ trip.endDate }}
+              </p>
+            </button>
+          </div>
+
+          <p v-if="planModalError" class="text-sm text-red-400 font-semibold mt-4">{{ planModalError }}</p>
+
+          <div class="flex items-center justify-end gap-3 mt-6">
+            <button
+              class="px-4 py-2 rounded-lg border font-bold text-sm transition-colors"
+              :class="store.isDark ? 'border-rp-border text-rp-muted hover:bg-rp-surface-2' : 'border-gray-200 text-gray-600 hover:bg-gray-50'"
+              @click="showPlanSelectorModal = false"
+            >Cancelar</button>
+            <button
+              class="px-5 py-2 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-60 transition-colors"
+              :class="store.isDark ? 'bg-rp-accent text-white hover:bg-orange-500' : 'bg-gradient-to-r from-rp-accent to-orange-600 text-white'"
+              :disabled="store.trips.length === 0"
+              @click="confirmAddToPlan"
+            >Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ArrowLeft, ArrowRight, Star, Clock, Check, Plane, Train, Bus, Car, Ship, Bike } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, Star, Clock, Check, Plane, Train, Bus, Car, Ship, Bike, BookmarkPlus } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { transportsMock, type TransportMock } from '@/mocks/transport'
+import type { Activity } from '@/types'
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
 
 const store = useAppStore()
 const emit = defineEmits(['close'])
@@ -343,6 +435,45 @@ const tickets = ref(1)
 const selectedClass = ref<{ name: string; surcharge: number } | null>(null)
 const bookingError = ref('')
 const booked = ref(false)
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function getDateKey(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function handleDateClick(info: { dateStr: string }) {
+  if (info.dateStr < today) return
+  departureDate.value = info.dateStr
+}
+
+function dayCellClassNames(arg: { date: Date }) {
+  const dateKey = getDateKey(arg.date)
+  if (dateKey < today) return ['rp-day-unavailable']
+  const classes = ['rp-day-available']
+  if (departureDate.value === dateKey) classes.push('rp-day-selected-start', 'rp-day-selected-end')
+  return classes
+}
+
+const calendarKey = computed(() => `trans-${transport.value?.id ?? 'none'}-${departureDate.value}`)
+
+const calendarOptions = computed(() => ({
+  plugins: [dayGridPlugin, interactionPlugin],
+  initialView: 'dayGridMonth',
+  locale: 'es',
+  height: 'auto',
+  fixedWeekCount: false,
+  selectable: false,
+  headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+  events: [],
+  dateClick: handleDateClick,
+  dayCellClassNames,
+}))
 
 const transportIconMap: Record<string, unknown> = {
   'Vuelo': Plane,
@@ -389,6 +520,47 @@ function handleClose() {
   emit('close')
   store.setCurrentView('plan')
 }
+
+const showPlanSelectorModal = ref(false)
+const selectedPlanId = ref('')
+const planModalError = ref('')
+
+function openAddToPlanModal() {
+  if (!departureDate.value) return
+  planModalError.value = ''
+  selectedPlanId.value = store.trips[0]?.id ?? ''
+  showPlanSelectorModal.value = true
+}
+
+function confirmAddToPlan() {
+  planModalError.value = ''
+  if (!selectedPlanId.value) {
+    planModalError.value = 'Selecciona un plan.'
+    return
+  }
+  const trip = store.trips.find(t => t.id === selectedPlanId.value)
+  if (!trip) {
+    planModalError.value = 'No se encontró el plan seleccionado.'
+    return
+  }
+  const start = new Date(trip.startDate)
+  const depDate = new Date(departureDate.value)
+  const dayIndex = Math.floor((depDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const totalDays = Math.ceil((new Date(trip.endDate).getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  if (dayIndex < 1 || dayIndex > totalDays) {
+    planModalError.value = 'La fecha de salida no cae dentro de ese plan.'
+    return
+  }
+  const planActivity: Activity = {
+    id: Date.now().toString(),
+    time: departureTime.value || '09:00',
+    title: `${transport.value?.type ?? 'Transporte'}: ${transport.value?.origin} → ${transport.value?.destination}`,
+    location: transport.value?.origin ?? '',
+  }
+  store.addActivity(trip.id, dayIndex, planActivity)
+  showPlanSelectorModal.value = false
+  store.setCurrentView('plan')
+}
 </script>
 
 <style scoped>
@@ -397,6 +569,44 @@ function handleClose() {
 .border-rp-border { border-color: var(--rp-border); }
 .text-rp-text { color: var(--rp-text); }
 .text-rp-muted { color: var(--rp-muted); }
+.bg-rp-accent { background-color: var(--rp-accent); }
+.from-rp-accent { --tw-gradient-from: var(--rp-accent); }
+.border-rp-accent { border-color: var(--rp-accent); }
+.border-rp-accent\/40 { border-color: rgba(249,115,22,0.4); }
+.hover\:border-rp-accent\/40:hover { border-color: rgba(249,115,22,0.4); }
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.98); }
+
+:deep(.rp-calendar-shell .fc) {
+  --rp-orange: #f97316; --rp-orange-soft: rgba(249,115,22,0.15); --rp-orange-divider: rgba(249,115,22,0.3);
+  font-family: 'DM Sans', sans-serif;
+}
+:deep(.rp-calendar-shell .fc-header-toolbar) { margin-bottom: 0.75rem; padding: 0.25rem 0.25rem 0.5rem; }
+:deep(.rp-calendar-shell .fc-toolbar-title) { font-size: 1rem; font-weight: 800; text-transform: capitalize; color: var(--rp-text, #374151); }
+:deep(.rp-calendar-shell .fc-button) {
+  background: var(--rp-surface-2, #fff) !important; border: 1px solid var(--rp-border, #e5e7eb) !important;
+  color: var(--rp-muted, #6b7280) !important; border-radius: 10px !important; box-shadow: none !important; padding: 0.2rem 0.5rem !important;
+}
+:deep(.rp-calendar-shell .fc-col-header-cell) { border: 0; background: transparent; padding-bottom: 0.35rem; }
+:deep(.rp-calendar-shell .fc-col-header-cell-cushion) { font-size: 0.75rem; color: var(--rp-muted, #9ca3af); font-weight: 700; text-transform: capitalize; }
+:deep(.rp-calendar-shell .fc-daygrid-day),
+:deep(.rp-calendar-shell .fc-scrollgrid),
+:deep(.rp-calendar-shell .fc-scrollgrid td),
+:deep(.rp-calendar-shell .fc-scrollgrid th) { border: 0 !important; }
+:deep(.rp-calendar-shell .fc-day-today) { background: transparent !important; }
+:deep(.rp-calendar-shell .fc-daygrid-day-frame) { min-height: 42px; display: flex; align-items: center; justify-content: center; }
+:deep(.rp-calendar-shell .fc-daygrid-day-number) {
+  width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.9rem; font-weight: 600; color: var(--rp-text, #4b5563); cursor: pointer; transition: background 0.15s;
+}
+:deep(.rp-calendar-shell .fc-day-other .fc-daygrid-day-number) { color: var(--rp-muted, #d1d5db); opacity: 0.4; }
+:deep(.rp-calendar-shell .rp-day-available .fc-daygrid-day-number) { color: var(--rp-text, #374151); }
+:deep(.rp-calendar-shell .rp-day-available .fc-daygrid-day-number:hover) { background: var(--rp-orange-soft); color: var(--rp-orange); }
+:deep(.rp-calendar-shell .rp-day-unavailable .fc-daygrid-day-number) { color: var(--rp-muted, #d1d5db); text-decoration: line-through; cursor: not-allowed; opacity: 0.35; }
+:deep(.rp-calendar-shell .rp-day-selected-start .fc-daygrid-day-number),
+:deep(.rp-calendar-shell .rp-day-selected-end .fc-daygrid-day-number) {
+  background: var(--rp-orange) !important; color: #fff !important; font-weight: 700; border-radius: 50%;
+}
 .text-rp-accent { color: var(--rp-accent); }
 .bg-rp-accent { background-color: var(--rp-accent); }
 </style>
