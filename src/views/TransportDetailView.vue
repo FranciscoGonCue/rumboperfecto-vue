@@ -134,6 +134,8 @@
             </div>
           </div>
 
+          <ServiceReviewsPanel v-if="transport" :servicio-id="String(transport.id)" class="mt-2" />
+
           <!-- Description -->
           <p class="leading-relaxed text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ transport.description }}
@@ -420,6 +422,7 @@ import type { Activity } from '@/types'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import ServiceReviewsPanel from '@/components/ServiceReviewsPanel.vue'
 
 const store = useAppStore()
 const emit = defineEmits(['close'])

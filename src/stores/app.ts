@@ -157,6 +157,16 @@ export const useAppStore = defineStore('app', () => {
     currentView.value = 'inicio'
   }
 
+  async function refreshSelectedServicio(): Promise<void> {
+    const id = selectedServicioId.value
+    if (!id) return
+    try {
+      selectedServicio.value = await serviciosApi.getOne(id)
+    } catch {
+      // No recargamos el objeto si falla la red.
+    }
+  }
+
   function applyThemeToDom(nextTheme: 'light' | 'dark'): void {
     if (typeof document === 'undefined') return
     const root = document.documentElement
@@ -471,6 +481,7 @@ export const useAppStore = defineStore('app', () => {
     closeRestaurantDetail,
     openServiceDetail,
     closeServiceDetail,
+    refreshSelectedServicio,
     setTheme,
     toggleTheme,
     loadThemeFromStorage,

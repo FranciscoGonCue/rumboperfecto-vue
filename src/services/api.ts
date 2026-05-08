@@ -334,6 +334,21 @@ export interface DetalleActividadAPI {
   turnos_ocupados: Record<string, string[]> | null
 }
 
+/** Reseña embebida en GET servicio (`resenas`). */
+export interface ResenaUsuarioAPI {
+  id: number
+  username: string
+  nombre: string
+}
+
+export interface ResenaServicioAPI {
+  id: number
+  usuario: ResenaUsuarioAPI
+  mensaje: string
+  puntuacion: number
+  creado_en: string
+}
+
 export interface Servicio {
   id_servicio: number
   tipo: TipoServicioAPI | null
@@ -353,6 +368,8 @@ export interface Servicio {
   moneda: string | null
   etiquetas: string[] | null
   destacado: boolean | null
+  /** Lista de reseñas del servicio (GET catálogo / detalle con prefetch). */
+  resenas?: ResenaServicioAPI[]
   detalle_alojamiento: DetalleAlojamientoAPI | null
   detalle_transporte: DetalleTransporteAPI | null
   detalle_restauracion: DetalleRestauracionAPI | null
@@ -532,10 +549,16 @@ export const serviciosApi = {
   },
   async getOne(id: string): Promise<Servicio> {
     const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api'
-    const url = `${base.replace(/\/$/, '')}/servicios/${id}/`
+    const url = `${base.replace(/\/$/, '')}/servicios/${encodeURIComponent(id)}/`
     const res = await fetch(url, { headers: { Accept: 'application/json' } })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return res.json() as Promise<Servicio>
+  },
+  /** POST con JWT. Requiere sesión. */
+  async postResena(idServicio: string, payload: { mensaje: string; puntuacion: number }): Promise<ResenaServicioAPI> {
+    const encoded = encodeURIComponent(idServicio)
+    const response = await api.post<ResenaServicioAPI>(`/servicios/${encoded}/resenas/`, payload)
+    return response.data
   },
 }
 

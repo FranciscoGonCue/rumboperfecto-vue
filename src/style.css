@@ -153,3 +153,17 @@
     border-bottom-color: #f97316 !important;
   }
 }
+
+/* Leaflet + Tailwind: preflight y capas base rompen teselas (mapa vacío / negro). */
+.leaflet-container .leaflet-tile-container img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+}
+.leaflet-container img {
+  max-width: none !important;
+}
+
+html.theme-dark .leaflet-container .leaflet-overlay-pane {
+  opacity: 1 !important;
+}
+

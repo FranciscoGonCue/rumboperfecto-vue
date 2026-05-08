@@ -57,6 +57,8 @@
         <!-- Description -->
         <p v-if="svc.descripcion" class="svc-desc">{{ svc.descripcion }}</p>
 
+        <ServiceReviewsPanel v-if="svc" :servicio-id="String(svc.id_servicio)" />
+
         <!-- ── ALOJAMIENTO details ── -->
         <div v-if="svc.detalle_alojamiento" class="svc-detail-card">
           <h3 class="svc-detail-title"><Hotel :size="15" /> Detalles del alojamiento</h3>
@@ -171,6 +173,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft, Hotel, Plane, Utensils, Compass, Plus, AlertCircle } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { serviciosApi, type Servicio } from '@/services/api'
+import ServiceReviewsPanel from '@/components/ServiceReviewsPanel.vue'
 
 const store = useAppStore()
 const loading = ref(true)

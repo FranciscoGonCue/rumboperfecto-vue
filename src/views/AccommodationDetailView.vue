@@ -67,6 +67,8 @@
             </div>
           </div>
 
+          <ServiceReviewsPanel v-if="selectedAccommodation" :servicio-id="String(selectedAccommodation.id)" class="mt-2" />
+
           <!-- Description -->
           <p class="leading-relaxed text-sm"
              :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
@@ -336,6 +338,7 @@ import { reservasApi } from '@/services/api'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import ServiceReviewsPanel from '@/components/ServiceReviewsPanel.vue'
 import type { Activity, Accommodation } from '@/types'
 
 const props = defineProps<{ accommodation?: Accommodation }>()
