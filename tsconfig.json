@@ -1,53 +1,47 @@
 {
-  // ============ OPCIONES DEL COMPILADOR TYPESCRIPT ============
   "compilerOptions": {
-    /* ---- VERSIÓN Y FORMATO DE SALIDA ---- */
-    "target": "ES2020", // JavaScript versión 2020 compatible con navegadores modernos
-    "module": "ESNext", // Usa el sistema de módulos más moderno (import/export)
+    "target": "ES2020",
+    "module": "ESNext",
     
     /* ---- LIBRERÍAS Y TIPOS ---- */
-    "lib": ["ES2020", "DOM", "DOM.Iterable"], // Incluye tipos para ES2020 y APIs del navegador
-    "types": ["vite/client"], // ⭐ IMPORTANTE: Carga los tipos de Vite para reconocer import.meta.env
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
     
     /* ---- RESOLUCIÓN DE MÓDULOS ---- */
-    "moduleResolution": "bundler", // Resuelve módulos como lo hace Vite
-    "skipLibCheck": true, // No verifica tipos en librerías externas (más rápido)
-    "allowImportingTsExtensions": true, // Permite importar archivos .ts directamente
-    "resolveJsonModule": true, // Permite importar archivos JSON
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     
     /* ---- RUTAS PERSONALIZADAS ---- */
     "paths": {
-      "@/*": ["./src/*"] // @ es un alias para la carpeta src
-                         // Así puedes hacer: import { tasksAPI } from '@/services/api'
+      "@/*": ["./src/*"]
     },
     
     /* ---- VALIDACIÓN ESTRICTA ---- */
-    "strict": true, // Activa verificación de tipos estricta
-    "noUnusedLocals": true, // Error si tienes variables sin usar
-    "noUnusedParameters": true, // Error si tienes parámetros sin usar
-    "noFallthroughCasesInSwitch": true, // Error si olvidas break en switch cases
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
     
     /* ---- SALIDA ---- */
-    "noEmit": true, // No genera archivos JS (lo hace Vite)
-    "jsx": "preserve", // Preserva JSX para Vue
+    "noEmit": true,
+    "jsx": "preserve",
     
     /* ---- CAMPOS DE CLASE ---- */
-    "useDefineForClassFields": true, // Usa sintaxis moderna para propiedades de clase
+    "useDefineForClassFields": true,
     
     /* ---- MÓDULOS AISLADOS ---- */
-    "isolatedModules": true, // Cada archivo puede compilarse independientemente
+    "isolatedModules": true,
   },
   
-  // ============ ARCHIVOS INCLUIDOS ============
-  // Le dice a TypeScript: "Verifica estos archivos"
   "include": [
-    "src/**/*.ts",     // Todos los archivos .ts en src
-    "src/**/*.tsx",    // Todos los archivos .tsx en src (TypeScript + JSX)
-    "src/**/*.vue"     // Todos los archivos .vue en src (componentes Vue)
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue"
   ],
   
-  // ============ REFERENCIAS A OTROS TSCONFIG ============
   "references": [
-    { "path": "./tsconfig.node.json" } // Configuración separada para archivos de nodode Vite
+    { "path": "./tsconfig.node.json" }
   ]
 }

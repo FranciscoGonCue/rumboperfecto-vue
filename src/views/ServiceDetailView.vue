@@ -1,30 +1,25 @@
 <template>
   <div class="svc-root" :class="store.isDark ? 'dark-mode' : 'light-mode'">
 
-    <!-- Back -->
     <div class="svc-topbar">
       <button class="svc-back-btn" @click="store.closeServiceDetail()">
         <ArrowLeft :size="16" /> Volver
       </button>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="svc-state">
       <div class="svc-spinner" />
       <p class="svc-state-text">Cargando servicio...</p>
     </div>
 
-    <!-- Error -->
     <div v-else-if="error" class="svc-state">
       <AlertCircle :size="40" class="opacity-30" />
       <p class="svc-state-text">{{ error }}</p>
       <button class="svc-retry-btn" @click="load">Reintentar</button>
     </div>
 
-    <!-- Content -->
     <div v-else-if="svc" class="svc-content">
 
-      <!-- Hero -->
       <div class="svc-hero">
         <img v-if="svc.imagen_url" :src="svc.imagen_url" :alt="svc.nombre ?? ''" class="svc-hero-img" />
         <div v-else class="svc-hero-placeholder">
@@ -40,10 +35,8 @@
         </div>
       </div>
 
-      <!-- Main info -->
       <div class="svc-body">
 
-        <!-- Header -->
         <div class="svc-header-block">
           <h1 class="svc-title">{{ svc.nombre ?? 'Sin nombre' }}</h1>
           <div class="svc-price-row">
@@ -54,12 +47,10 @@
           </div>
         </div>
 
-        <!-- Description -->
         <p v-if="svc.descripcion" class="svc-desc">{{ svc.descripcion }}</p>
 
         <ServiceReviewsPanel v-if="svc" :servicio-id="String(svc.id_servicio)" />
 
-        <!-- ── ALOJAMIENTO details ── -->
         <div v-if="svc.detalle_alojamiento" class="svc-detail-card">
           <h3 class="svc-detail-title"><Hotel :size="15" /> Detalles del alojamiento</h3>
           <div class="svc-detail-grid">
@@ -85,7 +76,6 @@
           </div>
         </div>
 
-        <!-- ── TRANSPORTE details ── -->
         <div v-if="svc.detalle_transporte" class="svc-detail-card">
           <h3 class="svc-detail-title"><Plane :size="15" /> Detalles del transporte</h3>
           <div class="svc-detail-grid">
@@ -112,7 +102,6 @@
           </div>
         </div>
 
-        <!-- ── RESTAURACIÓN details ── -->
         <div v-if="svc.detalle_restauracion" class="svc-detail-card">
           <h3 class="svc-detail-title"><Utensils :size="15" /> Detalles del restaurante</h3>
           <div class="svc-detail-grid">
@@ -135,7 +124,6 @@
           </div>
         </div>
 
-        <!-- ── ACTIVIDAD details ── -->
         <div v-if="svc.detalle_actividad" class="svc-detail-card">
           <h3 class="svc-detail-title"><Compass :size="15" /> Detalles de la actividad</h3>
           <div class="svc-detail-grid">
@@ -158,7 +146,6 @@
           </div>
         </div>
 
-        <!-- CTA añadir a plan -->
         <button class="svc-cta" @click="store.setCurrentView('plan')">
           <Plus :size="16" /> Añadir a un plan
         </button>

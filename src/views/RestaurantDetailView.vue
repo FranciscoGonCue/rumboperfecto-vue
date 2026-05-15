@@ -1,7 +1,6 @@
 <template>
   <div class="p-5 lg:p-10 min-h-full">
     <div class="max-w-5xl mx-auto">
-      <!-- Back button -->
       <div class="mb-6">
         <button
           class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
@@ -22,7 +21,6 @@
           ? 'bg-rp-surface border border-rp-border shadow-[0_24px_48px_rgba(0,0,0,0.5)]'
           : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <!-- Hero image with cuisine badge -->
         <div class="relative">
           <img
             :src="restaurant.image"
@@ -31,7 +29,6 @@
           />
           <div v-if="store.isDark" class="absolute inset-0 bg-gradient-to-t from-rp-surface/80 via-transparent to-transparent" />
 
-          <!-- Cuisine type badge -->
           <div class="absolute top-4 left-4 flex items-center space-x-2">
             <span
               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md"
@@ -44,7 +41,6 @@
             </span>
           </div>
 
-          <!-- Price range -->
           <div class="absolute top-4 right-4">
             <span
               class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-black backdrop-blur-md"
@@ -58,7 +54,6 @@
         </div>
 
         <div class="p-6 lg:p-9 space-y-6">
-          <!-- Header -->
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2
@@ -74,7 +69,6 @@
                   {{ restaurant.address }}, {{ restaurant.city }}
                 </p>
               </div>
-              <!-- Rating stars -->
               <div class="flex items-center gap-2 mt-2">
                 <div class="flex">
                   <Star
@@ -103,12 +97,10 @@
 
           <ServiceReviewsPanel v-if="restaurant" :servicio-id="String(restaurant.id)" class="mt-2" />
 
-          <!-- Description -->
           <p class="leading-relaxed text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ restaurant.description }}
           </p>
 
-          <!-- Specialties -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Especialidades de la casa
@@ -127,7 +119,6 @@
             </div>
           </div>
 
-          <!-- Tags -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Ambiente
@@ -146,7 +137,6 @@
             </div>
           </div>
 
-          <!-- Horarios -->
           <div
             class="rounded-2xl p-5 space-y-3 transition-colors"
             :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-gray-50 border border-gray-100'"
@@ -167,7 +157,6 @@
             </div>
           </div>
 
-          <!-- Reserva -->
           <div
             class="rounded-2xl p-5 space-y-5 transition-colors"
             :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-gray-50 border border-gray-100'"
@@ -176,7 +165,6 @@
               Reservar mesa
             </h3>
 
-            <!-- Calendario de selección de fecha -->
             <div
               class="rounded-2xl p-3 overflow-hidden rp-calendar-shell"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -184,13 +172,11 @@
               <FullCalendar :key="calendarKey" :options="calendarOptions" />
             </div>
 
-            <!-- Leyenda días cerrados -->
             <div v-if="hasSchedule" class="flex flex-wrap items-center gap-3 text-xs font-semibold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
               <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rp-accent" /> Seleccionado</span>
               <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:#ef4444" /> Cerrado</span>
             </div>
 
-            <!-- Fecha seleccionada + Hora -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 class="rounded-xl p-3 transition-colors"
@@ -221,7 +207,6 @@
               </div>
             </div>
 
-            <!-- Comensales -->
             <div
               class="rounded-xl p-3 transition-colors"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -247,7 +232,6 @@
               </div>
             </div>
 
-            <!-- Precio estimado -->
             <div
               v-if="reservationDate && reservationTime"
               class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 transition-colors"
@@ -261,10 +245,8 @@
               </p>
             </div>
 
-            <!-- Error -->
             <div v-if="bookingError" class="text-sm text-red-400 font-semibold">{{ bookingError }}</div>
 
-            <!-- CTA -->
             <div class="flex flex-col gap-3">
               <button
                 class="w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -301,7 +283,6 @@
                 </span>
               </button>
 
-              <!-- Selector de planes (dentro del bloque Reservas) -->
               <div
                 v-if="planPickerOpen"
                 class="rounded-2xl p-5 space-y-4 border transition-colors"
@@ -420,7 +401,6 @@ const diners = ref(2)
 const bookingError = ref('')
 const booked = ref(false)
 
-/** Horas por defecto si el servicio no define turnos_disponibles */
 const DEFAULT_RESTAURANT_TIMES = [
   '13:00', '13:30', '14:00', '14:30',
   '20:00', '20:30', '21:00', '21:30', '22:00',

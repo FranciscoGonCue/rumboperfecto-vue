@@ -3,14 +3,11 @@
     class="relative min-h-screen overflow-x-visible transition-colors duration-300"
     :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-white text-gray-900'"
   >
-    <!-- Show Auth View when not authenticated -->
     <AuthView v-if="!store.isAuthenticated" />
 
-    <!-- Show Main App when authenticated -->
     <template v-else>
       <SplashScreen :isVisible="showSplash" @complete="showSplash = false" />
       <div class="flex flex-col min-h-screen">
-        <!-- RESPONSIVE HEADER -->
         <header
           class="sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between transition-colors duration-300"
           :class="store.isDark
@@ -32,7 +29,6 @@
           </div>
         </div>
 
-        <!-- Desktop Navigation (Top) -->
         <nav class="hidden lg:flex items-center space-x-1">
           <DesktopNavLink
             :active="store.currentView === 'inicio'"
@@ -89,13 +85,11 @@
         </div>
       </header>
 
-      <!-- MAIN CONTENT AREA -->
       <main class="flex-1 w-full max-w-none mx-0 min-h-[50vh]">
         <ServiceDetailView
           v-if="store.currentView === 'servicio'"
           :key="store.selectedServicioId ?? ''"
         />
-        <!-- Loading mientras se fetchea el servicio -->
         <div
           v-else-if="store.selectedServicioLoading"
           class="flex items-center justify-center min-h-[60vh]"
@@ -131,7 +125,6 @@
         />
       </main>
 
-      <!-- MOBILE/TABLET BOTTOM NAVIGATION -->
       <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-5 pb-5">
         <div
           class="backdrop-blur-xl rounded-[30px] flex items-center justify-around h-[68px] px-2 max-w-md mx-auto transition-colors duration-300"

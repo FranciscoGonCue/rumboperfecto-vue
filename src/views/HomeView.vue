@@ -1,28 +1,29 @@
 <template>
   <div class="relative lg:flex w-full overflow-hidden" :class="globeExpanded ? 'h-screen' : 'lg:h-[calc(100vh-80px)]'">
 
-    <!-- GLOBE PANEL -->
     <div
       class="relative transition-all duration-700 ease-in-out overflow-hidden shadow-2xl lg:flex-shrink-0"
       :class="[
         globeExpanded
           ? 'h-screen w-full lg:flex-1 lg:min-w-0 z-[50]'
-          : (isMobile ? (mobileGlobeHidden ? 'h-0' : 'h-[35vh]') : (globeCollapsed ? 'lg:h-full lg:w-0' : 'lg:h-full lg:w-[30%]')),
-        !globeExpanded ? 'z-10' : '',
+          : (isMobile
+              ? (mobileGlobeHidden
+                  ? 'h-0'
+                  : (mobileMapFullscreen ? 'mobile-map-immersive' : 'h-[38vh] min-h-[180px] max-h-[320px]'))
+              : (globeCollapsed ? 'lg:h-full lg:w-0' : 'lg:h-full lg:w-[30%]')),
+        !globeExpanded && !mobileMapFullscreen ? 'z-10' : '',
       ]"
       :style="(!globeExpanded && ((!isMobile && globeCollapsed) || (isMobile && mobileGlobeHidden))) ? 'pointer-events:none;' : ''"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
     >
-      <!-- Globo 3D (se oculta al pasar al mapa cercano) -->
       <canvas
         ref="globeCanvas"
         class="absolute inset-0 block size-full transition-opacity duration-300"
         :class="detailMapMode ? 'opacity-0 pointer-events-none cursor-default' : 'cursor-grab opacity-100'"
       />
 
-      <!-- Mapa Leaflet al acercar mucho el zoom en el globo -->
       <div
         ref="leafletHost"
         class="home-leaflet-host absolute inset-0 z-[200] transition-opacity duration-300"
@@ -33,22 +34,36 @@
         <button
           v-if="detailMapMode"
           type="button"
-          class="absolute top-4 right-4 z-[250] flex items-center gap-2 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border transition-all"
-          style="background: rgba(10,14,26,0.92); border-color: rgba(249,115,22,0.35);"
+          class="absolute z-[250] flex items-center gap-2 backdrop-blur-md shadow-xl border transition-all hover:brightness-110 active:scale-[0.98]"
+          :class="mobileMapFullscreen ? 'top-3 right-3 px-3.5 py-3 rounded-2xl lg:top-4 lg:right-4 lg:py-2.5' : 'top-4 right-4 px-4 py-2.5 rounded-2xl'"
+          style="background: rgba(10,14,26,0.92); border-color: rgba(249,115,22,0.35); box-shadow: 0 12px 40px rgba(0,0,0,0.45);"
           @click="exitDetailMapMode"
         >
-          <Globe :size="18" class="text-orange-400" />
-          <span class="font-bold text-white uppercase text-[10px] tracking-wider">Globo 3D</span>
+          <Globe :size="18" class="text-orange-400 shrink-0" />
+          <span class="font-bold text-white uppercase text-[10px] tracking-wider whitespace-nowrap">Globo 3D</span>
         </button>
       </Transition>
 
-      <!-- Deep space background -->
-      <div class="absolute inset-0 -z-10" style="background: radial-gradient(ellipse at center, #0a0e1a 0%, #000308 100%);" />
-
-      <!-- Mobile overlay text -->
       <Transition name="fade">
         <div
-          v-if="!globeExpanded"
+          v-if="mobileMapFullscreen"
+          class="pointer-events-none absolute left-1/2 top-[3.65rem] z-[248] flex -translate-x-1/2 flex-col items-center gap-2 lg:hidden"
+        >
+          <span
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.14em] text-white/95 shadow-lg border backdrop-blur-md max-w-[min(90vw,300px)] text-center leading-snug"
+            style="background: rgba(10,14,26,0.88); border-color: rgba(249,115,22,0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.35);"
+          >
+            <MapPin :size="14" class="text-orange-400 shrink-0" />
+            Mapa interactivo · pellisca para zoom
+          </span>
+        </div>
+      </Transition>
+
+      <div class="absolute inset-0 -z-10" style="background: radial-gradient(ellipse at center, #0a0e1a 0%, #000308 100%);" />
+
+      <Transition name="fade">
+        <div
+          v-if="!globeExpanded && !detailMapMode"
           class="lg:hidden absolute inset-0 flex flex-col justify-end p-8 z-20 pointer-events-none"
           style="background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 60%);"
         >
@@ -62,7 +77,6 @@
         </div>
       </Transition>
 
-      <!-- Desktop card: "Tu próxima aventura" -->
       <Transition name="fade">
         <div
           v-if="!globeExpanded && !isMobile"
@@ -81,7 +95,6 @@
         </div>
       </Transition>
 
-      <!-- Collapse/Expand button (desktop) -->
       <Transition name="fade">
         <button
           v-if="!globeExpanded && !isMobile"
@@ -94,7 +107,6 @@
         </button>
       </Transition>
 
-      <!-- Salir modo globo expandido (visible encima del mapa → etiqueta reconocible) -->
       <Transition name="fade">
         <button
           v-if="globeExpanded && !detailMapMode && !isMobile"
@@ -111,7 +123,6 @@
         </button>
       </Transition>
 
-      <!-- Móvil: mismo control más compacto -->
       <Transition name="fade">
         <button
           v-if="globeExpanded && !detailMapMode && isMobile"
@@ -125,7 +136,6 @@
         </button>
       </Transition>
 
-      <!-- Espejo de «Expandir globo»: pill inferior para encontrar la acción fácil -->
       <Transition name="fade">
         <button
           v-if="globeExpanded && !detailMapMode && !isMobile"
@@ -139,7 +149,6 @@
         </button>
       </Transition>
 
-      <!-- Exit globe mode (solo si falta hueco lateral; mismo handler) -->
       <Transition name="fade">
         <button
           v-if="!globeExpanded && !isMobile"
@@ -152,7 +161,6 @@
         </button>
       </Transition>
 
-      <!-- Service popup floating card -->
       <Transition name="pop">
         <div
           v-if="hoveredMarker"
@@ -195,13 +203,11 @@
               <p class="font-black text-base mt-2" :style="{ color: leafletPinColorForKind(hoveredMarker.kind) }">{{ hoveredMarker.price }}</p>
             </div>
           </div>
-          <!-- Arrow -->
           <div class="mx-auto w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent" style="border-top-color: rgba(249,115,22,0.3);" />
         </div>
       </Transition>
     </div>
 
-    <!-- RIGHT PANEL: FEED -->
     <div
       v-if="!globeExpanded"
       class="w-full lg:h-full overflow-y-auto lg:rounded-l-[50px] relative z-20 shadow-[-20px_0_60px_rgba(0,0,0,0.4)]"
@@ -210,7 +216,6 @@
     >
       <div class="pb-32 lg:pb-12 pt-6 lg:pt-12 px-6 lg:px-10">
 
-        <!-- Search bar -->
         <div class="relative mb-6 -mt-12 lg:mt-0 w-full">
           <div class="flex flex-col lg:flex-row lg:items-center rounded-2xl px-4 py-3 lg:px-5 lg:py-4 transition-all gap-3 lg:gap-0"
                :style="store.isDark
@@ -262,7 +267,6 @@
           </div>
         </div>
 
-        <!-- Categories -->
         <div class="flex flex-wrap gap-2.5 mb-8">
           <button
             v-for="(cat, idx) in categories" :key="idx"
@@ -296,7 +300,6 @@
           </button>
         </div>
 
-        <!-- Feed header -->
         <div class="space-y-7">
           <div class="flex items-end justify-between">
             <div>
@@ -334,7 +337,7 @@
                 ? 'background: var(--rp-surface); border: 1px solid var(--rp-border); box-shadow: 0 8px 32px rgba(0,0,0,0.4);'
                 : 'background: white; border: 1px solid #f8fafc; box-shadow: 0 8px 24px rgba(0,0,0,0.06);'"
               @click="openItemDetail(item)"
-              @mouseenter="flyToService(item)"
+              @mouseenter="onFeedCardPointerEnter(item)"
             >
               <div class="relative h-56 overflow-hidden">
                 <img v-if="item.img" :src="item.img" :alt="item.title"
@@ -551,7 +554,7 @@
                 ? 'border-rp-border bg-rp-surface-2 hover:border-rp-accent/45 hover:bg-rp-surface'
                 : 'border-gray-100 bg-white hover:border-orange-100 hover:shadow-md'"
               @click="flyToService(item); openItemDetail(item)"
-              @mouseenter="flyToService(item)"
+              @mouseenter="onFeedCardPointerEnter(item)"
             >
               <div class="flex gap-3 p-2.5">
                 <div class="relative w-[76px] h-[76px] rounded-xl overflow-hidden shrink-0 bg-black/20">
@@ -618,7 +621,6 @@ import { serviciosApi, detectServicioView, type Servicio } from '@/services/api'
 
 const store = useAppStore()
 
-// ── Feed items (globo + lista) ────────────────────────────────────────────
 type FeedItem = {
   id: string
   title: string
@@ -632,7 +634,6 @@ type FeedItem = {
   img: string | null
 }
 
-// ── State ──────────────────────────────────────────────────────────────────
 const globeCanvas = ref<HTMLCanvasElement | null>(null)
 const globeExpanded = ref(false)
 const globeCollapsed = ref(false)
@@ -646,10 +647,12 @@ const checkIn = ref('')
 const checkOut = ref('')
 const guests = ref(2)
 
-// Touch swipe
+const mobileMapFullscreen = computed(
+  () => isMobile.value && detailMapMode.value && !globeExpanded.value,
+)
+
 let touchStartY = 0
 
-// ── THREE.js refs ──────────────────────────────────────────────────────────
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
 let camera: THREE.PerspectiveCamera | null = null
@@ -669,15 +672,10 @@ const detailMapMode = ref(false)
 const leafletHost = ref<HTMLElement | null>(null)
 let leafletMap: L.Map | null = null
 let leafletMarkers: L.Marker[] = []
-/** Ítem con hover activo en el mapa 2D (para reposicionar la mini tarjeta al pan/zoom). */
 let leafletHoverItemCache: FeedItem | null = null
 let globeResumeCamera: { dir: THREE.Vector3, dist: number } | null = null
 
-/** Por debajo de esta distancia órbita → mapa 2D (un poco por encima del mínimo del control). */
-/** Distancia cámara–centro menor o igual que esto ⇒ mapa 2D (valor mayor = antes, sin tanto zoom acercando). */
 const GLOBE_TO_MAP_DISTANCE = 2.35
-/** Al alejar el mapa hasta este zoom (o menos), volvemos al globo. */
-/** Alejar así con el zoom del mapa → volver al globo (debe estar por debajo del zoom inicial del mapa). */
 const LEAFLET_EXIT_ZOOM = 3
 
 const categories = [
@@ -758,7 +756,20 @@ watch(filteredItems, () => {
   refreshLeafletMarkers()
 }, { deep: true })
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+watch(mobileMapFullscreen, () => {
+  if (!detailMapMode.value) return
+  nextTick(() => {
+    resizeRenderer()
+    const bump = () => {
+      leafletMap?.invalidateSize()
+      if (leafletHoverItemCache) onLeafletMapPanOrZoom()
+    }
+    requestAnimationFrame(bump)
+    window.setTimeout(bump, 260)
+    window.setTimeout(bump, 620)
+  })
+})
+
 function feedKindColor(kind: string) {
   const m: Record<string, string> = { alojamiento: '#3b82f6', experiencia: '#8b5cf6', restaurante: '#22c55e', transporte: '#f59e0b' }
   return m[kind] || '#f97316'
@@ -772,9 +783,7 @@ function feedKindLabel(kind: string) {
   return m[kind] || kind
 }
 
-// ── THREE.js Globe Setup ───────────────────────────────────────────────────
 const TEX_BASE = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r125/examples/textures/planets/'
-/** Segmentos meridiano/paralelo (~48² ≈ menos de la mitad de triángulos que 96²). */
 const GLOBE_SPHERE_SEG = 48
 const CLOUD_SPHERE_SEG = 40
 
@@ -838,7 +847,6 @@ async function initGlobe() {
     earthTex = createProceduralEarthTexture()
   }
 
-  /** Lambert + solo diffuse: bastante más barato que Phong + normal + spec por píxel. */
   const globeGeo = new THREE.SphereGeometry(1, GLOBE_SPHERE_SEG, GLOBE_SPHERE_SEG)
   const globeMat = new THREE.MeshLambertMaterial({
     map: earthTex,
@@ -953,13 +961,11 @@ function drawEarthTexture(ctx: CanvasRenderingContext2D, w: number, h: number) {
     pts.slice(1).forEach(p => ctx.lineTo(p[0] * w, p[1] * h))
     ctx.closePath()
     ctx.fill()
-    // Coastline glow
     ctx.strokeStyle = 'rgba(40,200,120,0.3)'
     ctx.lineWidth = 2
     ctx.stroke()
   })
 
-  // Latitude/longitude grid
   ctx.strokeStyle = 'rgba(30,100,180,0.15)'
   ctx.lineWidth = 0.5
   for (let lat = 0; lat <= 180; lat += 30) {
@@ -975,7 +981,6 @@ function drawEarthTexture(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.stroke()
   }
 
-  // City lights overlay (night side dots)
   const cityPositions = [
     [0.372, 0.28], [0.41, 0.3], [0.39, 0.31], [0.44, 0.26], // Europe
     [0.56, 0.28], [0.60, 0.32], [0.65, 0.30], [0.72, 0.32], [0.78, 0.32], // Asia
@@ -1002,7 +1007,6 @@ function latLngToVector3(lat: number, lng: number, radius = 1.02): THREE.Vector3
   )
 }
 
-/** Centro del disco del globo a pantalla ↔ lat/lng (cámara mirando al origen). */
 function vector3DirToLatLng(v: THREE.Vector3): { lat: number, lng: number } {
   const u = v.clone().normalize()
   const phi = Math.acos(THREE.MathUtils.clamp(u.y, -1, 1))
@@ -1014,10 +1018,6 @@ function vector3DirToLatLng(v: THREE.Vector3): { lat: number, lng: number } {
   return { lat, lng }
 }
 
-/**
- * Zoom Leaflet inicial según cómo estabas en el globo al cambiar.
- * Umbrales alineados con GLOBE_TO_MAP_DISTANCE (más cerca del min ⇒ zoom algo mayor).
- */
 function leafletZoomFromGlobeDistance(d: number): number {
   const dMin = 1.38
   const dMax = GLOBE_TO_MAP_DISTANCE + 0.12
@@ -1025,7 +1025,6 @@ function leafletZoomFromGlobeDistance(d: number): number {
   return Math.round(THREE.MathUtils.lerp(7, 4, t))
 }
 
-/** Color de pin Leaflet igual que PlanDetail.vue (servicio tipo). */
 function leafletPinColorForKind(kind: string): string {
   switch (kind) {
     case 'alojamiento':
@@ -1041,7 +1040,6 @@ function leafletPinColorForKind(kind: string): string {
   }
 }
 
-/** Pin 2D compacto (antes 32px). */
 const LEAFLET_PIN_PX = 22
 
 function buildLeafletPin(color: string) {
@@ -1072,7 +1070,6 @@ function leafletMarkerMiniCardPx(lat: number, lng: number): { sx: number, sy: nu
   return { sx: pt.x, sy: pt.y }
 }
 
-/** Reposa la tarjeta flotante si el hovering es del mapa Leaflet (pan/zoom). */
 function onLeafletMapPanOrZoom() {
   if (!detailMapMode.value || !leafletHoverItemCache || !leafletMap) return
   const item = leafletHoverItemCache
@@ -1095,11 +1092,10 @@ function setLeafletHoveredService(item: FeedItem | null) {
 function initLeafletMap() {
   const el = leafletHost.value
   if (!el || leafletMap) return
-  leafletMap = L.map(el, { zoomControl: true })
-
-  /**
-   * OpenStreetMap: estable; Carto a veces no sirve teselas en este cliente.
-   */
+  leafletMap = L.map(el, {
+    zoomControl: false,
+  })
+  L.control.zoom({ position: 'topleft' }).addTo(leafletMap)
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -1155,6 +1151,7 @@ async function enterDetailMapMode() {
   controls.enabled = false
 
   await nextTick()
+  if (isMobile.value && !globeExpanded.value) await nextTick()
 
   if (leafletMap) {
     leafletMarkers.forEach((m) => m.remove())
@@ -1215,7 +1212,6 @@ function addServiceMarkers() {
 
   filteredItems.value.forEach((svc) => {
     const pos = latLngToVector3(svc.lat, svc.lng)
-    /** Un único marker (más pequeño que antes para molestar menos en el globo). */
     const pinGeo = new THREE.CylinderGeometry(0, 0.01, 0.052, 6)
     const pinMat = new THREE.MeshBasicMaterial({ color: 0xff7a29 })
     const pin = new THREE.Mesh(pinGeo, pinMat)
@@ -1228,7 +1224,6 @@ function addServiceMarkers() {
   })
 }
 
-// ── Animation loop ─────────────────────────────────────────────────────────
 function animate() {
   animFrameId = requestAnimationFrame(animate)
   if (document.visibilityState === 'hidden') return
@@ -1242,8 +1237,6 @@ function animate() {
   renderer.render(scene, camera)
 }
 
-// ── Pointer / click (rotación y zoom: OrbitControls) ────────────────────────
-/** Un raycaster/hover como máximo una vez por frame (menos trabajo enmousemove). */
 let hoverRafQueued = false
 let lastPointerForHover: Pick<PointerEvent, 'clientX' | 'clientY'> | null = null
 
@@ -1303,7 +1296,6 @@ function onGlobeClick(e: MouseEvent) {
   }
 }
 
-// ── Globe navigation ───────────────────────────────────────────────────────
 function flyToService(svc: FeedItem) {
   if (svc.lat == null || svc.lng == null) return
   if (detailMapMode.value && leafletMap) {
@@ -1336,7 +1328,6 @@ function flyToService(svc: FeedItem) {
   flyTweenRaf = requestAnimationFrame(tick)
 }
 
-// Igual que Tailwind duration-700 sobre el panel del globo
 const GLOBE_LAYOUT_MS = 720
 
 function scheduleGlobeResize() {
@@ -1347,7 +1338,6 @@ function scheduleGlobeResize() {
   })
 }
 
-/** Mide el panel contenedor — no el canvas (Three fuerza px en canvas.style). */
 function globePanelDims(): { w: number, h: number } | null {
   const canvas = globeCanvas.value
   const panel = canvas?.parentElement
@@ -1384,12 +1374,13 @@ function resizeRenderer() {
   if (leafletHoverItemCache && detailMapMode.value) onLeafletMapPanOrZoom()
 }
 
-// ── Mobile swipe ────────────────────────────────────────────────────────────
 function handleTouchStart(e: TouchEvent) {
+  if (detailMapMode.value) return
   touchStartY = e.touches[0].clientY
 }
 function handleTouchMove() {}
 function handleTouchEnd(e: TouchEvent) {
+  if (detailMapMode.value) return
   const dy = touchStartY - e.changedTouches[0].clientY
   if (dy > 60) {
     if (!globeExpanded.value) expandGlobe()
@@ -1399,7 +1390,6 @@ function handleTouchEnd(e: TouchEvent) {
   }
 }
 
-// ── Search / filters ────────────────────────────────────────────────────────
 function handleSearch() {}
 function filterByCategory(cat: string) {
   selectedCategory.value = cat
@@ -1408,17 +1398,31 @@ function openItemDetail(item: FeedItem) {
   void store.openServiceDetail(item.id)
 }
 
-// ── Resize observer ─────────────────────────────────────────────────────────
+function onFeedCardPointerEnter(item: FeedItem) {
+  if (!flyGlobeOnFeedCardHover.value) return
+  flyToService(item)
+}
+
 let resizeObs: ResizeObserver | null = null
 
 function checkIsMobile() {
   isMobile.value = window.innerWidth < 1024
 }
 
-// ── Lifecycle ───────────────────────────────────────────────────────────────
-onMounted(() => {
+const flyGlobeOnFeedCardHover = ref(false)
+
+function updateViewportFlags() {
   checkIsMobile()
-  window.addEventListener('resize', checkIsMobile)
+  if (typeof window === 'undefined') return
+  flyGlobeOnFeedCardHover.value =
+    window.innerWidth >= 1280 &&
+    window.matchMedia('(hover: hover)').matches &&
+    window.matchMedia('(pointer: fine)').matches
+}
+
+onMounted(() => {
+  updateViewportFlags()
+  window.addEventListener('resize', updateViewportFlags)
   void loadServicios()
   setTimeout(() => {
     void initGlobe().catch((err) => console.error('[HomeView] initGlobe', err))
@@ -1430,7 +1434,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkIsMobile)
+  window.removeEventListener('resize', updateViewportFlags)
   if (flyTweenRaf != null) cancelAnimationFrame(flyTweenRaf)
   if (animFrameId) cancelAnimationFrame(animFrameId)
   resizeObs?.disconnect()
@@ -1486,6 +1490,47 @@ onUnmounted(() => {
 .home-leaflet-host :deep(.leaflet-container) {
   width: 100%;
   height: 100%;
+  border-radius: 0;
+  background: #0f172a;
+}
+
+@media (max-width: 1023px) {
+  .mobile-map-immersive {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 4.75rem;
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100dvh - 4.75rem);
+    max-height: calc(100dvh - 4.75rem);
+    z-index: 38;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mobile-map-immersive .home-leaflet-host :deep(.leaflet-container) {
+    z-index: 0;
+  }
+
+  .mobile-map-immersive :deep(.leaflet-top.leaflet-left) {
+    margin-top: 10px;
+    margin-left: 12px;
+  }
+
+  .mobile-map-immersive :deep(.leaflet-control-zoom a) {
+    width: 36px;
+    height: 36px;
+    line-height: 34px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+
+  .mobile-map-immersive :deep(.leaflet-bottom.leaflet-right) {
+    margin-right: calc(10px + env(safe-area-inset-right, 0px));
+    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 canvas { display: block; }

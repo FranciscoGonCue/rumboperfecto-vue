@@ -39,7 +39,6 @@ export default function useThree() {
     const width = window.innerWidth
     const height = window.innerHeight
 
-    // Camera
     const camera = new PerspectiveCamera(
       config.camera_fov || 50,
       width / height,
@@ -51,7 +50,6 @@ export default function useThree() {
       camera.position.copy(config.camera_pos)
     }
 
-    // Renderer
     const renderer = new WebGLRenderer({
       canvas: canvas,
       antialias: config.antialias !== undefined ? config.antialias : true,
@@ -59,9 +57,8 @@ export default function useThree() {
     })
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearColor(0xffffff, 1) // Fondo blanco
+    renderer.setClearColor(0xffffff, 1)
 
-    // Mouse tracking
     const mouse = new Vector2()
     const mouseV3 = new Vector3()
     let raycaster: Raycaster | undefined
@@ -75,7 +72,6 @@ export default function useThree() {
         mouse.x = (event.clientX / width) * 2 - 1
         mouse.y = -(event.clientY / height) * 2 + 1
 
-        // Update 3D mouse position
         const vector = new Vector3(mouse.x, mouse.y, 0.5)
         vector.unproject(camera)
         const dir = vector.sub(camera.position).normalize()
@@ -88,7 +84,6 @@ export default function useThree() {
       })
     }
 
-    // Camera controls
     let cameraCtrl: OrbitControls | undefined
     if (config.camera_ctrl) {
       cameraCtrl = new OrbitControls(camera, canvas)
@@ -103,7 +98,6 @@ export default function useThree() {
       }
     }
 
-    // Resize handler
     const handleResize = () => {
       const width = window.innerWidth
       const height = window.innerHeight

@@ -1,9 +1,6 @@
 <template>
   <div class="planner-root min-h-screen" :class="store.isDark ? 'dark-mode' : 'light-mode'">
 
-    <!-- ══════════════════════════════════════════
-         STICKY HEADER
-    ══════════════════════════════════════════ -->
     <header class="planner-header sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center gap-3">
       <button class="back-btn flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-sm transition-all" @click="$emit('close')">
         <ArrowLeft :size="15" />
@@ -19,7 +16,6 @@
         </p>
       </div>
 
-      <!-- Summary pills -->
       <div class="hidden lg:flex items-center gap-1.5">
         <div v-for="t in serviceTypes" :key="t.id"
           class="stat-pill flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black"
@@ -29,7 +25,6 @@
         </div>
       </div>
 
-      <!-- View toggle -->
       <div class="view-toggle flex rounded-xl overflow-hidden p-0.5 gap-0.5">
         <button class="vtbtn px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wide transition-all"
           :class="viewMode==='days'?'vtbtn-active':''" @click="viewMode='days'">
@@ -41,7 +36,6 @@
         </button>
       </div>
 
-      <!-- Add event FAB -->
       <button class="add-fab flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm text-white transition-all"
         @click="openAddModal()">
         <Plus :size="15" />
@@ -53,12 +47,8 @@
       </button>
     </header>
 
-    <!-- ══════════════════════════════════════════
-         VIEW: DAYS
-    ══════════════════════════════════════════ -->
     <div v-if="viewMode==='days'" class="planner-body flex flex-col lg:flex-row min-h-[calc(100vh-72px)]">
 
-      <!-- Day rail -->
       <aside class="day-rail lg:w-[200px] xl:w-[230px] flex-shrink-0">
         <div class="day-rail-inner p-3 lg:p-4 flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px]">
           <span class="day-rail-lbl hidden lg:block text-[9px] font-black uppercase tracking-[0.2em] px-1 mb-1">Días</span>
@@ -79,10 +69,8 @@
         </div>
       </aside>
 
-      <!-- Timeline main -->
       <main class="flex-1 min-w-0 p-4 lg:p-8 overflow-y-auto">
 
-        <!-- Day heading -->
         <div class="flex items-end justify-between gap-4 mb-7">
           <div>
             <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{{ dayLong(activeDay) }}</p>
@@ -102,7 +90,6 @@
           </div>
         </div>
 
-        <!-- Empty -->
         <div v-if="getDay(activeDay).length===0"
           class="empty-state rounded-3xl p-12 lg:p-20 flex flex-col items-center text-center">
           <div class="empty-icon w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
@@ -114,7 +101,6 @@
             @click="openAddModal()">+ Agregar evento</button>
         </div>
 
-        <!-- Timeline list -->
         <TransitionGroup v-else name="item-anim" tag="div" class="space-y-3 mb-4">
           <div v-for="(item,idx) in sortedDay" :key="item.id" class="timeline-item pl-7">
             <div class="tl-conn" :class="idx<sortedDay.length-1?'tl-conn-line':''">
@@ -159,14 +145,12 @@
           </div>
         </TransitionGroup>
 
-        <!-- Add more -->
         <button v-if="getDay(activeDay).length>0"
           class="add-more-btn w-full py-3.5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 border-2 border-dashed transition-all mt-2"
           @click="openAddModal()">
           <Plus :size="16" /> Agregar evento al día {{ activeDay }}
         </button>
 
-        <!-- Day nav -->
         <div class="flex items-center justify-between mt-8 gap-3">
           <button class="nav-btn px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all disabled:opacity-25"
             :disabled="activeDay<=1" @click="activeDay--">
@@ -187,9 +171,6 @@
       </main>
     </div>
 
-    <!-- ══════════════════════════════════════════
-         VIEW: WEEK CALENDAR
-    ══════════════════════════════════════════ -->
     <div v-else class="p-4 lg:p-8">
 
       <div class="flex items-end justify-between gap-4 mb-6">
@@ -220,11 +201,9 @@
         </div>
       </div>
 
-      <!-- Calendar grid wrapper (horizontal scroll on mobile) -->
       <div class="overflow-x-auto rounded-3xl border cal-grid-border">
         <div class="cal-grid min-w-[600px] rounded-3xl overflow-hidden">
 
-          <!-- Header -->
           <div class="cal-header grid" :style="`grid-template-columns: 56px repeat(${weekDays.length}, 1fr)`">
             <div class="cal-header-cell-time" />
             <div v-for="col in weekDays" :key="'h'+col.dayNum"
@@ -234,7 +213,6 @@
               <p class="text-[9px] font-black uppercase tracking-widest opacity-50">{{ col.weekdayShort }}</p>
               <p class="text-xl font-black mt-0.5 leading-none" :class="col.isToday?'text-accent':''">{{ col.dayOfMonth }}</p>
               <p class="text-[8px] font-bold opacity-35 mt-0.5 uppercase">{{ col.monthShort }}</p>
-              <!-- item dots summary -->
               <div class="flex justify-center gap-0.5 mt-1.5">
                 <div v-for="t in serviceTypes" :key="t.id" v-show="countType(col.dayNum,t.id)>0"
                   class="w-1.5 h-1.5 rounded-full" :style="`background:${t.color}`" />
@@ -242,7 +220,6 @@
             </div>
           </div>
 
-          <!-- All-day row (alojamiento + transporte) -->
           <div class="cal-allday-strip grid" :style="`grid-template-columns: 56px repeat(${weekDays.length}, 1fr)`">
             <div class="allday-label text-[8px] font-black uppercase opacity-30 flex items-center justify-center px-1">Todo día</div>
             <div v-for="col in weekDays" :key="'ad'+col.dayNum"
@@ -266,7 +243,6 @@
             </div>
           </div>
 
-          <!-- Time slot rows -->
           <div v-for="slot in timeSlots" :key="slot"
             class="cal-slot-row grid"
             :style="`grid-template-columns: 56px repeat(${weekDays.length}, 1fr)`">
@@ -296,7 +272,6 @@
         </div>
       </div>
 
-      <!-- Legend -->
       <div class="flex flex-wrap gap-2.5 mt-5">
         <span v-for="t in serviceTypes" :key="t.id"
           class="flex items-center gap-2 text-xs font-black px-3 py-1.5 rounded-full"
@@ -307,9 +282,6 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════
-         ADD EVENT MODAL — 3 steps
-    ══════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="sheet">
         <div v-if="showModal"
@@ -319,14 +291,12 @@
 
           <div class="add-sheet w-full sm:max-w-[480px] rounded-t-[32px] sm:rounded-[32px] overflow-hidden relative">
 
-            <!-- Progress bar -->
             <div class="flex items-center gap-1.5 px-6 pt-5 pb-4">
               <div v-for="s in 3" :key="s"
                 class="h-1 rounded-full flex-1 transition-all duration-500"
                 :style="s<=step?`background:${svc(form.type).color}`:'background:var(--border)'" />
             </div>
 
-            <!-- ── STEP 1: type selection ── -->
             <Transition name="step-slide" mode="out-in">
               <div v-if="step===1" key="s1" class="px-6 pb-6 space-y-4">
                 <div>
@@ -366,7 +336,6 @@
               </div>
             </Transition>
 
-            <!-- ── STEP 2: details form ── -->
             <Transition name="step-slide" mode="out-in">
               <div v-if="step===2" key="s2" class="px-6 pb-6 space-y-3">
                 <div class="flex items-center gap-3 mb-1">
@@ -418,7 +387,6 @@
               </div>
             </Transition>
 
-            <!-- ── STEP 3: preview + confirm ── -->
             <Transition name="step-slide" mode="out-in">
               <div v-if="step===3" key="s3" class="px-6 pb-6 space-y-4">
                 <div class="flex items-center gap-3 mb-1">
@@ -428,7 +396,6 @@
                   <p class="font-black uppercase text-sm opacity-50">Vista previa</p>
                 </div>
 
-                <!-- Preview card matches timeline card -->
                 <div class="preview-card rounded-2xl overflow-hidden"
                   :style="`border:1px solid ${svc(form.type).color}35;background:var(--surface-2)`">
                   <div class="h-[3px]" :style="`background:${svc(form.type).color}`" />
@@ -457,7 +424,6 @@
                   </div>
                 </div>
 
-                <!-- Day selector -->
                 <div class="confirm-row rounded-xl p-3 flex items-center gap-3">
                   <CalendarDays :size="15" class="opacity-40 flex-shrink-0" />
                   <div class="flex-1">
@@ -485,7 +451,6 @@
               </div>
             </Transition>
 
-            <!-- ── SUCCESS OVERLAY ── -->
             <Transition name="success-pop">
               <div v-if="showSuccess"
                 class="absolute inset-0 flex flex-col items-center justify-center rounded-[32px] z-10"
@@ -528,7 +493,6 @@ const props = defineProps<{ trip: Trip }>()
 const emit = defineEmits<{ (e:'close'):void; (e:'delete',id:string):void }>()
 const store = useAppStore()
 
-// ─── Service types ─────────────────────────────────────────────────────────────
 const serviceTypes = [
   { id:'alojamiento', label:'Hotel',    icon:Hotel,    color:'#3b82f6', desc:'Dónde te quedas',  placeholder:'Hotel Ritz, Airbnb...' },
   { id:'actividad',   label:'Aventura', icon:Compass,  color:'#10b981', desc:'Qué vas a hacer',  placeholder:'Visita al templo...' },
@@ -537,7 +501,6 @@ const serviceTypes = [
 ]
 const svc = (id:string) => serviceTypes.find(t=>t.id===id) ?? serviceTypes[1]
 
-// ─── State ────────────────────────────────────────────────────────────────────
 const viewMode = ref<'days'|'week'>('days')
 const activeDay = ref(1)
 const currentWeek = ref(0)
@@ -550,7 +513,6 @@ const lastDay = ref(1)
 
 const localItems = reactive<Record<number,PlanItem[]>>({})
 
-// Hydrate from trip
 ;(() => {
   if (!props.trip?.activities) return
   Object.entries(props.trip.activities).forEach(([k,v]) => {
@@ -568,7 +530,6 @@ const localItems = reactive<Record<number,PlanItem[]>>({})
 
 const form = reactive({ day:1, type:'actividad', title:'', time:'', location:'', notes:'', price:'' })
 
-// ─── Computed ──────────────────────────────────────────────────────────────────
 const totalDays = computed(() => {
   const s = new Date(props.trip.startDate), e = new Date(props.trip.endDate)
   return Math.max(1, Math.ceil((e.getTime()-s.getTime())/86400000)+1)
@@ -610,7 +571,6 @@ const weekDays = computed(() => {
 const timeSlots = ['08:00','09:00','10:00','11:00','12:00','13:00',
   '14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00']
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function dayDate(day:number):Date {
   const d = new Date(props.trip.startDate)
   d.setDate(d.getDate()+day-1)
@@ -629,7 +589,6 @@ function getItemsForSlot(dayNum:number, slot:string):PlanItem[] {
   })
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
 function setDay(d:number) { activeDay.value=d }
 
 function switchToDay(d:number) {
@@ -654,7 +613,6 @@ function confirmAdd() {
   if (!localItems[form.day]) localItems[form.day]=[]
   localItems[form.day].push(item)
 
-  // persist
   try { store.addActivity?.(props.trip.id, form.day, { id:item.id, title:item.title, location:item.location, time:item.time }) } catch {}
 
   lastType.value=form.type
@@ -690,7 +648,6 @@ function confirmDelete() {
 .planner-root { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
 .text-accent { color:var(--accent); }
 
-/* HEADER */
 .planner-header { background:var(--surface); border-bottom:1px solid var(--border); box-shadow:0 2px 20px rgba(0,0,0,.13); }
 .back-btn { background:var(--surface-2); border:1px solid var(--border); color:var(--muted); }
 .back-btn:hover { color:var(--accent); border-color:rgba(249,115,22,.3); }
@@ -706,7 +663,6 @@ function confirmDelete() {
 .add-fab { background:var(--accent); box-shadow:0 4px 16px rgba(249,115,22,.35); }
 .add-fab:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(249,115,22,.5); }
 
-/* DAY RAIL */
 .day-rail { background:var(--surface); border-bottom:1px solid var(--border); }
 @media(min-width:1024px){ .day-rail { border-bottom:none; border-right:1px solid var(--border); } }
 .day-rail-inner { scrollbar-width:none; }
@@ -719,7 +675,6 @@ function confirmDelete() {
 .day-btn-active .day-num { background:var(--accent); color:#fff; box-shadow:0 3px 10px rgba(249,115,22,.4); }
 .day-count-lbl { color:var(--muted); }
 
-/* TIMELINE */
 .empty-state { background:var(--surface); border:2px dashed var(--border); }
 .empty-icon { background:var(--surface-2); color:var(--muted); }
 .add-cta { background:var(--accent); box-shadow:0 6px 20px rgba(249,115,22,.35); }
@@ -742,7 +697,6 @@ function confirmDelete() {
 .prog-filled { background:var(--muted); width:8px; height:8px; }
 .prog-empty { background:var(--border); width:8px; height:8px; }
 
-/* WEEK CALENDAR */
 .week-counter { background:var(--surface-2); border:1px solid var(--border); color:var(--muted); font-family:'Syne',sans-serif; }
 .cal-grid-border { border-color:var(--border); }
 .cal-grid { background:var(--surface); }
@@ -766,7 +720,6 @@ function confirmDelete() {
 .cal-chip-timed { transition:all .2s; }
 .cal-chip-timed:hover { transform:scale(1.02) translateY(-1px); }
 
-/* MODAL SHEET */
 .add-sheet { background:var(--surface); border-top:1px solid var(--border); }
 @media(min-width:640px){ .add-sheet { border:1px solid var(--border); box-shadow:0 40px 80px rgba(0,0,0,.6); } }
 .modal-title { color:var(--text); }
@@ -781,11 +734,9 @@ function confirmDelete() {
 .finput::placeholder { color:var(--muted); font-weight:500; }
 .confirm-row { background:var(--surface-2); border:1px solid var(--border); color:var(--text); }
 
-/* success */
 .success-ring { animation:ring-in .4s cubic-bezier(.34,1.56,.64,1) both; }
 @keyframes ring-in { from { transform:scale(0) rotate(-20deg); opacity:0; } to { transform:scale(1) rotate(0); opacity:1; } }
 
-/* TRANSITIONS */
 .item-anim-enter-active { transition:all .3s cubic-bezier(.34,1.56,.64,1); }
 .item-anim-leave-active { transition:all .18s ease; }
 .item-anim-enter-from { opacity:0; transform:translateX(-14px) scale(.97); }

@@ -1,7 +1,6 @@
 <template>
   <div class="p-5 lg:p-10 min-h-full">
     <div class="max-w-5xl mx-auto">
-      <!-- Back button -->
       <div class="mb-6">
         <button
           class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
@@ -22,7 +21,6 @@
           ? 'bg-rp-surface border border-rp-border shadow-[0_24px_48px_rgba(0,0,0,0.5)]'
           : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <!-- Hero image -->
         <div class="relative">
           <img
             :src="selectedAccommodation.image"
@@ -33,7 +31,6 @@
         </div>
 
         <div class="p-6 lg:p-9 space-y-6">
-          <!-- Header: title + price -->
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 class="text-2xl lg:text-3xl font-black uppercase tracking-tight"
@@ -69,13 +66,11 @@
 
           <ServiceReviewsPanel v-if="selectedAccommodation" :servicio-id="String(selectedAccommodation.id)" class="mt-2" />
 
-          <!-- Description -->
           <p class="leading-relaxed text-sm"
              :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ selectedAccommodation.description }}
           </p>
 
-          <!-- Amenities -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3"
                 :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Comodidades</h3>
@@ -93,7 +88,6 @@
             </div>
           </div>
 
-          <!-- Tags -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3"
                 :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Etiquetas</h3>
@@ -111,7 +105,6 @@
             </div>
           </div>
 
-          <!-- Availability + calendar -->
           <div class="rounded-2xl p-5 space-y-4 transition-colors"
                :class="store.isDark
                  ? 'bg-rp-surface-2 border border-rp-border'
@@ -128,7 +121,6 @@
               <FullCalendar :key="calendarKey" :options="calendarOptions" />
             </div>
 
-            <!-- Check-in / Check-out -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="rounded-xl p-3 transition-colors"
                    :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'">
@@ -148,7 +140,6 @@
               </div>
             </div>
 
-            <!-- Hint + clear -->
             <div class="flex items-center justify-between gap-3">
               <p class="text-sm font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                 {{ selectionHint }}
@@ -164,7 +155,6 @@
               </button>
             </div>
 
-            <!-- Legend -->
             <div class="flex flex-wrap items-center gap-3 text-xs font-semibold"
                  :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
               <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-400" /> Seleccionado</span>
@@ -172,12 +162,10 @@
               <span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500" /> Disponible</span>
             </div>
 
-            <!-- Error -->
             <div v-if="bookingError" class="text-sm text-red-400 font-semibold">
               {{ bookingError }}
             </div>
 
-            <!-- Price total -->
             <div
               v-else-if="canCalculatePrice"
               class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 transition-colors"
@@ -193,9 +181,7 @@
               </p>
             </div>
 
-            <!-- Action buttons -->
             <div class="flex gap-3 mt-2">
-              <!-- Reservar -->
               <button
                 class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="store.isDark
@@ -208,7 +194,6 @@
                 <span v-else-if="booked">✓ ¡Reservado!</span>
                 <span v-else>Reservar</span>
               </button>
-              <!-- Añadir a plan -->
               <button
                 class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="store.isDark
@@ -224,7 +209,6 @@
         </div>
       </div>
 
-      <!-- Not found state -->
       <div
         v-else
         class="rounded-3xl p-10 text-center transition-colors"
@@ -251,7 +235,6 @@
     </div>
   </div>
 
-  <!-- Plan selector modal -->
   <Teleport to="body">
     <Transition name="modal">
       <div
@@ -514,7 +497,6 @@ async function handleBook() {
       precio_total: nightsCount.value * (selectedAccommodation.value?.pricePerNight ?? 0),
     })
     booked.value = true
-    // Bloquear fechas localmente para que el calendario se actualice
     const acc = selectedAccommodation.value
     const cursor = new Date(checkInDate.value)
     const end    = new Date(checkOutDate.value)
@@ -598,7 +580,6 @@ watch(
   transform: scale(0.98);
 }
 
-/* Dark mode vars */
 .bg-rp-bg { background-color: var(--rp-bg); }
 .bg-rp-surface { background-color: var(--rp-surface); }
 .bg-rp-surface-2 { background-color: var(--rp-surface-2); }
@@ -616,7 +597,6 @@ watch(
 .from-rp-surface\/80 { --tw-gradient-from: rgba(17,17,24,0.8); }
 .to-transparent { --tw-gradient-to: transparent; }
 
-/* Calendar dark mode shell */
 :deep(.rp-calendar-shell .fc) {
   --rp-orange: #f97316;
   --rp-orange-soft: rgba(249,115,22,0.15);

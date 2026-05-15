@@ -1,5 +1,4 @@
 <template>
-  <!-- FULL-PAGE PLAN DETAIL — overlays everything when a plan is selected -->
   <Transition name="slide-up">
     <PlanDetail
       v-if="selectedPlan"
@@ -14,7 +13,6 @@
   <div class="p-6 lg:p-12 min-h-full transition-colors"
        :class="store.isDark ? 'bg-rp-bg' : ''">
     <div class="max-w-6xl mx-auto">
-      <!-- HEADER -->
       <div class="flex items-center justify-between mb-10">
         <div>
           <h2 class="text-4xl font-black uppercase tracking-tighter leading-none"
@@ -26,7 +24,6 @@
         </div>
 
         <div class="flex items-center space-x-3">
-          <!-- View toggle -->
           <div class="flex rounded-2xl p-1"
                :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-gray-100 shadow-md'">
             <button
@@ -61,7 +58,6 @@
             </button>
           </div>
 
-          <!-- New trip button -->
           <button
             class="flex items-center space-x-2 px-5 py-3.5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95"
             :class="store.isDark
@@ -76,7 +72,6 @@
         </div>
       </div>
 
-      <!-- Network Error Banner -->
       <Transition name="fade-down">
         <div
           v-if="store.networkError"
@@ -96,7 +91,6 @@
         </div>
       </Transition>
 
-      <!-- EMPTY STATE -->
       <div v-if="store.planes.length === 0" class="text-center py-20">
         <div class="w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center"
              :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-orange-50'">
@@ -119,14 +113,11 @@
         </button>
       </div>
 
-      <!-- TRIPS CONTENT -->
       <div v-else>
-        <!-- LOADING -->
         <div v-if="store.planesLoading" class="flex justify-center py-20">
           <div class="w-10 h-10 rounded-full border-4 border-rp-accent border-t-transparent animate-spin" />
         </div>
 
-        <!-- CARDS MODE -->
         <div v-else-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div
             v-for="trip in store.planes"
@@ -136,7 +127,6 @@
               ? 'bg-rp-surface border border-rp-border hover:border-rp-accent/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
               : 'bg-white shadow-lg hover:shadow-2xl'"
           >
-            <!-- Color bar -->
             <div
               class="h-1 w-full"
               :style="{ background: getTripColor(String(trip.id_plan)) }"
@@ -199,7 +189,6 @@
           </div>
         </div>
 
-        <!-- CALENDAR MODE -->
         <div v-else class="rounded-3xl overflow-hidden shadow-lg"
              :class="store.isDark
                ? 'bg-rp-surface border border-rp-border shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
@@ -209,7 +198,6 @@
       </div>
     </div>
 
-    <!-- MODAL: ADD TRIP -->
     <Teleport to="body">
       <Transition name="modal">
         <div
@@ -327,7 +315,6 @@ import interactionPlugin from '@fullcalendar/interaction'
 import type { CalendarOptions } from '@fullcalendar/core'
 const store = useAppStore()
 
-// Fetch planes del usuario cada vez que se monta la vista
 onMounted(() => {
   store.fetchPlanes()
 })
@@ -339,7 +326,6 @@ const selectedPlan = ref<PlanViaje | null>(null)
 const planDetailLoading = ref(false)
 
 async function openPlanDetail(id: number) {
-  // Mostrar inmediatamente con los datos que ya tenemos y recargar en background
   selectedPlan.value = store.planes.find(p => p.id_plan === id) ?? null
   planDetailLoading.value = true
   try {
@@ -430,7 +416,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 } as CalendarOptions))
 
 function handleEventClick(_info: any) {
-  // Abrir detalle del plan al hacer click en el calendario (futuro)
 }
 
 function handleEventContent(info: any) {
@@ -491,7 +476,6 @@ function getPlanDays(plan: { fecha_inicio: string | null; fecha_fin: string | nu
 .slide-up-enter-from { opacity: 0; transform: translateY(40px) scale(0.98); }
 .slide-up-leave-to { opacity: 0; transform: translateY(20px) scale(0.99); }
 
-/* CSS vars */
 .bg-rp-bg { background-color: var(--rp-bg); }
 .bg-rp-surface { background-color: var(--rp-surface); }
 .bg-rp-surface-2 { background-color: var(--rp-surface-2); }
@@ -555,7 +539,6 @@ function getPlanDays(plan: { fecha_inicio: string | null; fecha_fin: string | nu
   to { opacity: 1; }
 }
 
-/* FullCalendar dark theme */
 :deep(.fc) {
   font-family: 'DM Sans', sans-serif;
   color: var(--rp-text, #1f2937);
@@ -766,7 +749,6 @@ function getPlanDays(plan: { fecha_inicio: string | null; fecha_fin: string | nu
   transition: all 0.2s ease;
 }
 
-/* Responsive */
 @media (max-width: 1200px) {
   :deep(.fc-header-toolbar) { padding: 1.5rem; gap: 1.2rem; }
   :deep(.fc-toolbar-title) { font-size: 1.75rem; }

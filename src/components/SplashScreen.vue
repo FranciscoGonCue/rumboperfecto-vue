@@ -8,7 +8,6 @@
       class="fixed inset-0 z-[100] flex items-center justify-center bg-rumbo-orange"
       style="background-color: #ff7f50"
     >
-      <!-- Animated Plane -->
       <div
         class="w-48 h-48 drop-shadow-[0_25px_30px_rgba(0,0,0,0.3)]"
         :style="planeStyle"
@@ -16,7 +15,6 @@
         <AirplaneSVG />
       </div>
 
-      <!-- Slogan -->
       <div
         class="absolute bottom-24 flex flex-col items-center space-y-2"
         :style="sloganStyle"
@@ -30,7 +28,6 @@
         <div class="w-12 h-1 bg-white/30 rounded-full mt-4" />
       </div>
 
-      <!-- Subtle Clouds Background -->
       <div class="absolute inset-0 pointer-events-none opacity-20">
         <div class="absolute top-1/4 left-1/4 w-32 h-12 bg-white rounded-full blur-2xl animate-pulse" />
         <div
@@ -60,8 +57,6 @@ const sloganOpacity = ref(0)
 
 const planeStyle = computed(() => {
   const progress = animationProgress.value
-  // Translate relative to the screen center; keep it visible from the start.
-  const x = -45 + (90 * progress) // From -45vw to 45vw
   const y = [0, -50, 40, -40, 0]
   const rotate = [0, -8, 4, -4, 0]
   
@@ -85,7 +80,7 @@ const sloganStyle = computed(() => ({
 
 onMounted(() => {
   let startTime: number | null = null
-  const duration = 1600 // ~2s total including fade-out
+  const duration = 1600
 
   const animate = (timestamp: number) => {
     if (!startTime) startTime = timestamp
@@ -94,7 +89,6 @@ onMounted(() => {
 
     animationProgress.value = progress
 
-    // Show slogan quickly (matches faster splash)
     if (elapsed > 350) {
       sloganOpacity.value = Math.min((elapsed - 350) / 450, 1)
     }

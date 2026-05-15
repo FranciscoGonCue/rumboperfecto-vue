@@ -1,7 +1,6 @@
 <template>
   <div class="pd-root" :class="store.isDark ? 'dark-mode' : 'light-mode'">
 
-    <!-- ══ HEADER ══ -->
     <header class="pd-header flex items-center gap-3 px-4 lg:px-6 py-3">
       <button class="back-btn flex items-center gap-2 px-3 py-2 rounded-xl font-bold text-sm" @click="$emit('close')">
         <ArrowLeft :size="15" /><span class="hidden sm:inline">Mis Viajes</span>
@@ -23,7 +22,6 @@
           'bg-gray-500/15 text-gray-400': plan.estado_plan === 'Finalizado',
         }">{{ plan.estado_plan }}</span>
 
-      <!-- type pills -->
       <div class="hidden lg:flex items-center gap-1.5">
         <div v-for="t in serviceTypes" :key="t.id"
           class="stat-pill flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black"
@@ -33,7 +31,6 @@
         </div>
       </div>
 
-      <!-- Tab switcher -->
       <div class="tab-switcher">
         <button class="tab-btn" :class="{ 'tab-btn--active': activeTab === 'semanal' }" @click="activeTab = 'semanal'">
           <CalendarRange :size="14" /><span>Semanal</span>
@@ -43,7 +40,6 @@
         </button>
       </div>
 
-      <!-- Week navigation (solo en vista semanal) -->
       <Transition name="fade-quick">
         <div v-if="activeTab === 'semanal'" class="week-nav flex items-center gap-1 px-2 py-1.5 rounded-xl">
           <button class="nav-btn p-1.5 rounded-lg" @click="prevWeek" :disabled="currentWeekStart <= 0">
@@ -64,35 +60,74 @@
       <button class="delete-btn p-2.5 rounded-xl" @click="confirmDelete"><Trash2 :size="15" /></button>
     </header>
 
-    <!-- ══ BODY ══ -->
     <div v-if="loading" class="flex-1 flex justify-center items-center py-20">
       <div class="w-10 h-10 rounded-full border-4 border-[var(--accent)] border-t-transparent animate-spin" />
     </div>
 
-    <!-- ── MAPA ── -->
-    <div v-else-if="activeTab === 'mapa'" class="map-view flex-1 overflow-hidden relative">
-      <div ref="mapContainer" class="w-full h-full" />
-      <!-- Leyenda de items con coordenadas -->
-      <div class="map-legend">
-        <div v-for="item in itemsWithCoords" :key="item.id_item" class="map-legend-item"
-          @click="flyToItem(item)">
-          <div class="map-legend-dot" :style="`background:${svc(item).color}`" />
-          <span class="map-legend-name">{{ item.nombre_servicio || `Ítem ${item.id_item}` }}</span>
+    <div v-else-if="activeTab === 'mapa'" class="map-view flex flex-col flex-1 overflow-hidden relative min-h-0">
+      <div class="map-day-toolbar flex-shrink-0">
+        <div class="map-day-toolbar-inner">
+          <button
+            type="button"
+            class="map-day-chip map-day-chip--all"
+            :class="{ 'map-day-chip--active': mapDayFilter === 'all' }"
+            @click="mapDayFilter = 'all'"
+          >
+            <CalendarRange :size="13" class="map-day-chip-icon" />
+            <div class="map-day-chip-all-text">
+              <span class="map-day-chip-title">Todos los días</span>
+              <span class="map-day-chip-meta">{{ itemsWithCoords.length }}/{{ props.plan.items.length }} con ubicación</span>
+            </div>
+          </button>
+          <button
+            v-for="d in mapDayChips"
+            :key="d.index"
+            type="button"
+            class="map-day-chip"
+            :class="{ 'map-day-chip--active': mapDayFilter === d.index }"
+            @click="mapDayFilter = d.index"
+          >
+            <span class="map-day-chip-title">Día {{ d.index }}</span>
+            <span class="map-day-chip-date">{{ d.weekdayShort }} {{ d.dayNum }}</span>
+            <span class="map-day-chip-meta">{{ d.coordsCount }} mapa · {{ d.activityCount }} act.</span>
+          </button>
         </div>
-        <div v-if="itemsWithCoords.length === 0" class="map-no-coords">
+        <p v-if="mapDayFilter !== 'all' && mapItemsForView.length === 0 && dayActivityWithoutCoords > 0" class="map-day-hint">
+          Este día tiene actividades sin ubicación; añade coordenadas al editar el ítem.
+        </p>
+      </div>
+      <div ref="mapContainer" class="map-canvas w-full flex-1 min-h-0 relative" />
+      <!-- Leyenda: solo ítems visibles según día -->
+      <div class="map-legend">
+        <div class="map-legend-head">
+          <span>{{ mapLegendTitle }}</span>
+        </div>
+        <template v-if="mapItemsForView.length > 0">
+          <div v-for="item in mapItemsForView" :key="item.id_item" class="map-legend-item"
+            @click="flyToItem(item)">
+            <div class="map-legend-dot" :style="`background:${svc(item).color}`" />
+            <div class="map-legend-copy">
+              <span class="map-legend-name">{{ item.nombre_servicio || `Ítem ${item.id_item}` }}</span>
+              <span class="map-legend-sub">{{ legendSubline(item) }}</span>
+            </div>
+          </div>
+        </template>
+        <div v-else-if="itemsWithCoords.length === 0" class="map-no-coords">
           <Map :size="20" class="opacity-30" />
           <p>Ningún ítem tiene coordenadas guardadas</p>
+        </div>
+        <div v-else class="map-no-coords map-no-coords--soft">
+          <Map :size="20" class="opacity-35" />
+          <p>{{ mapLegendEmpty }}</p>
         </div>
       </div>
     </div>
 
     <div v-else class="pd-body flex-1 overflow-hidden flex flex-col">
 
-      <!-- ── WEEKLY GRID ── -->
       <div class="week-grid-wrapper flex-1 overflow-hidden px-3 lg:px-5 pt-3 pb-3">
         <div class="week-grid" :style="`grid-template-columns: repeat(${visibleDays.length}, minmax(0, 1fr))`">
 
-          <!-- Day columns -->
           <div
             v-for="day in visibleDays"
             :key="day.index"
@@ -102,7 +137,6 @@
             @dragleave="onDragLeave"
             @drop.prevent="onDrop(day.index)"
           >
-            <!-- Day header -->
             <div class="day-header" @click="selectDay(day.index)">
               <div class="day-header-inner">
                 <span class="day-weekday">{{ day.weekdayShort }}</span>
@@ -113,9 +147,7 @@
               <div v-if="day.items.length > 0" class="day-count">{{ day.items.length }}</div>
             </div>
 
-            <!-- Items in this day -->
             <div class="day-items-wrapper">
-              <!-- Drop indicator -->
               <div v-if="dragOverDay === day.index && draggedItemId" class="drop-indicator">
                 <span>Soltar aquí</span>
               </div>
@@ -159,13 +191,11 @@
                 </div>
               </TransitionGroup>
 
-              <!-- Empty day CTA -->
               <div v-if="day.items.length === 0 && dragOverDay !== day.index" class="empty-day" @click="openAddModal(day.index)">
                 <Plus :size="14" class="opacity-30" />
               </div>
             </div>
 
-            <!-- Day total -->
             <div v-if="day.total > 0" class="day-footer">
               <span class="day-total">{{ day.total.toFixed(0) }}€</span>
             </div>
@@ -173,7 +203,6 @@
         </div>
       </div>
 
-      <!-- ── BOTTOM SUMMARY BAR ── -->
       <div class="summary-bar flex items-center gap-4 px-5 py-3">
         <div v-for="t in serviceTypes" :key="t.id" class="summary-type flex items-center gap-1.5">
           <div class="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -194,15 +223,12 @@
       </div>
     </div>
 
-    <!-- ══ DAY DETAIL PANEL ══ -->
     <Transition name="day-panel">
       <div v-if="selectedDay" class="day-panel-overlay" @click.self="selectedDayIndex = null">
         <div class="day-panel" :style="`width:${dayPanelWidth}px`">
 
-          <!-- Resize handle -->
           <div class="day-panel-resizer" @mousedown="startPanelResize" />
 
-          <!-- Panel header -->
           <div class="day-panel-header">
             <div class="day-panel-date-block">
               <div class="day-panel-big-num" :class="{ 'text-accent': selectedDay.isToday }">
@@ -223,7 +249,6 @@
             <button class="day-panel-close" @click="selectedDayIndex = null"><X :size="16" /></button>
           </div>
 
-          <!-- Type breakdown -->
           <div v-if="selectedDay.items.length > 0" class="day-panel-types">
             <div v-for="t in serviceTypes" :key="t.id"
               class="day-panel-type-chip"
@@ -234,7 +259,6 @@
             </div>
           </div>
 
-          <!-- Items list -->
           <div class="day-panel-body">
             <div v-if="selectedDay.items.length === 0" class="day-panel-empty">
               <div class="day-panel-empty-icon"><Plus :size="22" /></div>
@@ -283,7 +307,6 @@
             </div>
           </div>
 
-          <!-- Footer -->
           <div class="day-panel-footer">
             <button class="day-panel-add-btn" @click="openAddModal(selectedDay.index)">
               <Plus :size="15" /> Añadir al día {{ selectedDay.index }}
@@ -294,15 +317,12 @@
       </div>
     </Transition>
 
-    <!-- ══ ITEM EDIT DRAWER ══ -->
     <Transition name="drawer">
       <div v-if="selectedItem" class="item-drawer" @click.self="selectedItem = null">
         <div class="drawer-card">
 
-          <!-- Accent bar con color del tipo -->
           <div class="drawer-accent-bar" :style="`background:${svc(selectedItem).color}`" />
 
-          <!-- Header -->
           <div class="drawer-header flex items-center gap-3 px-5 pt-4 pb-3">
             <div class="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
               :style="`background:${svc(selectedItem).color}20;color:${svc(selectedItem).color}`">
@@ -316,7 +336,6 @@
                 {{ editForm.nombre || selectedItem.nombre_servicio || `Ítem ${selectedItem.id_item}` }}
               </h3>
             </div>
-            <!-- Badge guardado -->
             <Transition name="success-pop">
               <span v-if="editSuccess" class="edit-saved-badge">
                 <CheckCircle2 :size="11" /> Guardado
@@ -325,17 +344,14 @@
             <button class="close-drawer p-2 rounded-xl" @click="selectedItem = null"><X :size="15" /></button>
           </div>
 
-          <!-- Form body -->
           <div class="drawer-form px-5 pb-4 space-y-3 overflow-y-auto flex-1">
 
-            <!-- Nombre -->
             <div class="field">
               <label class="flbl">Nombre</label>
               <input v-model="editForm.nombre" type="text" class="finput w-full"
                 :placeholder="selectedItem.nombre_servicio || 'Nombre del servicio'" />
             </div>
 
-            <!-- Fechas -->
             <div class="grid grid-cols-2 gap-2">
               <div class="field">
                 <label class="flbl">Fecha inicio</label>
@@ -347,7 +363,6 @@
               </div>
             </div>
 
-            <!-- Precios -->
             <div class="grid grid-cols-2 gap-2">
               <div class="field">
                 <label class="flbl">Precio estimado (€)</label>
@@ -361,7 +376,6 @@
               </div>
             </div>
 
-            <!-- Estado pago -->
             <div class="field">
               <label class="flbl">Estado de pago</label>
               <div class="edit-pay-group">
@@ -379,16 +393,34 @@
               </div>
             </div>
 
-            <!-- Localizador -->
             <div class="field">
               <label class="flbl">Localizador / Referencia</label>
               <input v-model="editForm.localizador" type="text" class="finput w-full font-mono"
                 placeholder="ABC-123" />
             </div>
 
+            <div class="field">
+              <label class="flbl">Dirección en mapa</label>
+              <p class="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-1.5">Geocodificación (OpenStreetMap)</p>
+              <div class="flex gap-2">
+                <input v-model="editForm.direccion" type="text" class="finput flex-1 min-w-0"
+                  placeholder="Ej. Gran Vía 28, Madrid" @keydown.enter.prevent="lookupEditAddress" />
+                <button type="button" class="geocode-btn" :disabled="geocodeEditLoading"
+                  @click="lookupEditAddress">
+                  {{ geocodeEditLoading ? '…' : 'Buscar' }}
+                </button>
+              </div>
+              <p v-if="geocodeEditError" class="edit-geo-msg edit-geo-msg--err">{{ geocodeEditError }}</p>
+              <p v-else-if="editMapCoords" class="edit-geo-msg edit-geo-msg--ok">
+                <MapPin :size="12" class="inline-block mr-1 align-middle text-[var(--accent)]" />
+                <span>{{ editMapCoords.lat.toFixed(5) }}, {{ editMapCoords.lon.toFixed(5) }}</span>
+              </p>
+              <button v-if="editMapCoords || editForm.direccion.trim()" type="button" class="edit-geo-clear"
+                @click="clearEditMapLocation">Quitar ubicación del mapa</button>
+            </div>
+
           </div>
 
-          <!-- Footer: guardar / eliminar -->
           <div class="drawer-footer px-5 py-4 flex gap-2">
             <button class="del-full-btn flex-shrink-0 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest text-red-500 border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-all"
               @click="handleDeleteItem(selectedItem)">
@@ -409,7 +441,6 @@
       </div>
     </Transition>
 
-    <!-- ══ ADD ITEM MODAL ══ -->
     <Teleport to="body">
       <Transition name="sheet">
         <div v-if="showAddModal"
@@ -419,7 +450,6 @@
 
           <div class="add-sheet w-full sm:max-w-[500px] rounded-t-[32px] sm:rounded-[32px] overflow-hidden relative">
 
-            <!-- Progress -->
             <div class="flex gap-1.5 px-6 pt-5 pb-3">
               <div v-for="s in 3" :key="s" class="h-1 rounded-full flex-1 transition-all duration-500"
                 :style="s <= step ? `background:${currentType.color}` : 'background:var(--border)'" />
@@ -428,7 +458,6 @@
               {{ ['Elige el tipo', 'Rellena los detalles', 'Confirma y añade'][step - 1] }}
             </p>
 
-            <!-- STEP 1 -->
             <Transition name="step-slide" mode="out-in">
               <div v-if="step === 1" key="s1" class="px-6 pb-6 space-y-4">
                 <div>
@@ -463,7 +492,6 @@
               </div>
             </Transition>
 
-            <!-- STEP 2 -->
             <Transition name="step-slide" mode="out-in">
               <div v-if="step === 2" key="s2" class="px-6 pb-6 space-y-3">
                 <div class="flex items-center gap-3 mb-2">
@@ -497,6 +525,23 @@
                 </div>
                 <div class="field"><label class="flbl">{{ currentType.locLabel }}</label>
                   <input v-model="form.localizador" type="text" class="finput w-full" :placeholder="currentType.locPlaceholder" /></div>
+                <div class="field">
+                  <label class="flbl">Dirección en mapa</label>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-1.5">Opcional · aparecerá como pin</p>
+                  <div class="flex gap-2">
+                    <input v-model="form.direccion" type="text" class="finput flex-1 min-w-0"
+                      placeholder="Calle Mayor 1, Sevilla" @keydown.enter.prevent="lookupAddAddress" />
+                    <button type="button" class="geocode-btn" :disabled="geocodeAddLoading" @click="lookupAddAddress">
+                      {{ geocodeAddLoading ? '…' : 'Buscar' }}
+                    </button>
+                  </div>
+                  <p v-if="geocodeAddError" class="edit-geo-msg edit-geo-msg--err">{{ geocodeAddError }}</p>
+                  <p v-else-if="addMapCoords" class="edit-geo-msg edit-geo-msg--ok">
+                    <MapPin :size="12" class="inline mr-1 align-middle opacity-70" /> Ubicación lista
+                  </p>
+                  <button v-if="addMapCoords || form.direccion.trim()" type="button" class="edit-geo-clear"
+                    @click="clearAddMapLocation">Quitar del mapa</button>
+                </div>
                 <button class="w-full py-3.5 rounded-2xl font-black uppercase tracking-widest text-sm text-white disabled:opacity-40"
                   :style="`background:${currentType.color};box-shadow:0 6px 20px ${currentType.color}45`"
                   :disabled="!form.nombre" @click="step = 3">Vista previa →</button>
@@ -527,6 +572,7 @@
                       <div class="flex gap-2 mt-1.5">
                         <span v-if="form.precio" class="text-xs font-black px-2 py-0.5 rounded-md" :style="`background:${currentType.color}12;color:${currentType.color}`">{{ Number(form.precio).toFixed(2) }} €</span>
                         <span v-if="form.localizador" class="text-xs opacity-40">Loc: {{ form.localizador }}</span>
+                        <span v-if="addMapCoords" class="text-xs font-bold px-2 py-0.5 rounded-md bg-white/25">📍 Mapa</span>
                       </div>
                     </div>
                   </div>
@@ -573,11 +619,11 @@ import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import {
   ArrowLeft, Trash2, Plus, ChevronLeft, ChevronRight,
   Hotel, Compass, Utensils, Car, CalendarDays,
-  CheckCircle2, X, CalendarRange, Map
+  CheckCircle2, X, CalendarRange, Map, MapPin
 } from 'lucide-vue-next'
 import L from 'leaflet'
 import { useAppStore } from '@/stores/app'
-import { plansApi, tiposServicioApi } from '@/services/api'
+import { plansApi, tiposServicioApi, geocodeApi } from '@/services/api'
 import type { ItemPlan, PlanViaje } from '@/types'
 
 const props = defineProps<{ plan: PlanViaje; loading?: boolean }>()
@@ -585,11 +631,12 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'delete', id: number): void }
 
 const store = useAppStore()
 const activeTab = ref<'semanal' | 'mapa'>('semanal')
+const mapDayFilter = ref<'all' | number>('all')
 
-// ─── Map ───────────────────────────────────────────────────────────────────────
 const mapContainer = ref<HTMLElement | null>(null)
 let leafletMap: L.Map | null = null
 let markers: L.Marker[] = []
+const markerByItemId: Record<number, L.Marker> = {}
 
 const itemsWithCoords = computed(() =>
   props.plan.items.filter(i => i.ubicacion_lat != null && i.ubicacion_lon != null)
@@ -610,6 +657,39 @@ function buildMarkerIcon(color: string) {
   })
 }
 
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function popupWhenLine(item: ItemPlan): string {
+  const di = dayIndexForItem(item)
+  if (!item.fecha_hora_inicio) return `Día ${di}`
+  const dt = new Date(item.fecha_hora_inicio).toLocaleString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return `Día ${di} · ${dt}`
+}
+
+function legendSubline(item: ItemPlan): string {
+  const time = popupWhenLine(item)
+  const dir = (item.ubicacion_direccion || '').trim()
+  if (dir) {
+    const short = dir.length > 44 ? `${dir.slice(0, 42)}…` : dir
+    return `${short} · ${time}`
+  }
+  return time
+}
+
+const MAP_FIT_MAX_ZOOM = 13
+
 function initMap() {
   if (!mapContainer.value || leafletMap) return
   leafletMap = L.map(mapContainer.value, { zoomControl: true })
@@ -624,25 +704,33 @@ function renderMarkers() {
   if (!leafletMap) return
   markers.forEach(m => m.remove())
   markers = []
+  for (const k of Object.keys(markerByItemId)) delete markerByItemId[+k]
   const bounds: [number, number][] = []
-  for (const item of itemsWithCoords.value) {
+  for (const item of mapItemsForView.value) {
     const lat = item.ubicacion_lat!
     const lon = item.ubicacion_lon!
     const s = svc(item)
+    const title = escapeHtml(item.nombre_servicio || `Ítem ${item.id_item}`)
+    const dirLine = item.ubicacion_direccion
+      ? `<p style="font-size:10px;opacity:.85;margin:0 0 4px;line-height:1.3">${escapeHtml(item.ubicacion_direccion)}</p>`
+      : ''
     const marker = L.marker([lat, lon], { icon: buildMarkerIcon(s.color) })
       .addTo(leafletMap!)
       .bindPopup(`
         <div style="font-family:'DM Sans',sans-serif;min-width:160px">
           <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${s.color};margin:0 0 2px">${s.label}</p>
-          <p style="font-size:13px;font-weight:900;text-transform:uppercase;margin:0 0 4px">${item.nombre_servicio || `Ítem ${item.id_item}`}</p>
+          <p style="font-size:13px;font-weight:900;text-transform:uppercase;margin:0 0 4px">${title}</p>
+          ${dirLine}
+          <p style="font-size:11px;opacity:.92;margin:0 0 6px;line-height:1.35">${escapeHtml(popupWhenLine(item))}</p>
           ${item.monto_total != null ? `<p style="font-size:12px;font-weight:900;color:${s.color};margin:0">${item.monto_total.toFixed(2)}€</p>` : ''}
         </div>
       `, { maxWidth: 220 })
     markers.push(marker)
+    markerByItemId[item.id_item] = marker
     bounds.push([lat, lon])
   }
   if (bounds.length > 0) {
-    leafletMap.fitBounds(bounds, { padding: [40, 40] })
+    leafletMap.fitBounds(L.latLngBounds(bounds), { padding: [56, 56], maxZoom: MAP_FIT_MAX_ZOOM })
   } else {
     leafletMap.setView([40.4, -3.7], 5)
   }
@@ -651,8 +739,7 @@ function renderMarkers() {
 function flyToItem(item: ItemPlan) {
   if (!leafletMap || item.ubicacion_lat == null || item.ubicacion_lon == null) return
   leafletMap.flyTo([item.ubicacion_lat, item.ubicacion_lon], 15, { duration: 1 })
-  const idx = itemsWithCoords.value.indexOf(item)
-  markers[idx]?.openPopup()
+  window.setTimeout(() => markerByItemId[item.id_item]?.openPopup?.(), 380)
 }
 
 watch(activeTab, async (tab) => {
@@ -663,7 +750,20 @@ watch(activeTab, async (tab) => {
   }
 })
 
-// ─── Service types ─────────────────────────────────────────────────────────────
+watch(
+  () => [mapDayFilter.value, props.plan.items] as const,
+  async () => {
+    if (activeTab.value !== 'mapa' || !leafletMap) return
+    await nextTick()
+    renderMarkers()
+  },
+  { deep: true },
+)
+
+watch(() => props.plan.id_plan, () => {
+  mapDayFilter.value = 'all'
+})
+
 const serviceTypes = [
   { id: 'alojamiento', label: 'Alojamiento', icon: Hotel,    color: '#3b82f6', keywords: ['alojamiento','hotel','hospedaje','apartamento','hostal','pension','motel'], desc:'Hotel, Airbnb...', nameLabel:'Nombre del alojamiento', placeholder:'Hotel Ritz...', startLabel:'Check-in', endLabel:'Check-out', locLabel:'Nº reserva', locPlaceholder:'BK-12345' },
   { id: 'actividad',   label: 'Actividad',   icon: Compass,  color: '#10b981', keywords: ['actividad','aventura','excursion','excursión','tour','visita','experiencia'], desc:'Tours, excursiones...', nameLabel:'Nombre actividad', placeholder:'Visita al Coliseo...', startLabel:'Inicio', endLabel:'Fin', locLabel:'Referencia', locPlaceholder:'TK-98765' },
@@ -680,11 +780,9 @@ function matchesType(item: ItemPlan, typeId: string): boolean {
   return t ? t.keywords.some(k => name.includes(normalize(k))) : false
 }
 
-// ─── Backend types ─────────────────────────────────────────────────────────────
 const backendTipos = ref<{ id_tipo: number; nombre_tipo: string }[]>([])
 onMounted(async () => { try { backendTipos.value = await tiposServicioApi.getAll() } catch {} })
 
-// Map backend tipo IDs → frontend category (built from keyword matching)
 const tipoIdToCat = computed(() => {
   const record: Record<number, string> = {}
   for (const bt of backendTipos.value) {
@@ -699,19 +797,15 @@ const tipoIdToCat = computed(() => {
   return record
 })
 
-// Local cache: item id → frontend category (for freshly created/saved items)
 const itemCategoryCache: Record<number, string> = {}
 
 function svc(item: ItemPlan) {
-  // 1. Check local cache first (most reliable for recently created items)
   const cached = itemCategoryCache[item.id_item]
   if (cached) return serviceTypes.find(t => t.id === cached) ?? serviceTypes[0]
-  // 2. Match via backend tipo ID map
   if (item.tipo != null && tipoIdToCat.value[item.tipo]) {
     const catId = tipoIdToCat.value[item.tipo]
     return serviceTypes.find(t => t.id === catId) ?? serviceTypes[0]
   }
-  // 3. Fall back to tipo_nombre keyword matching
   return serviceTypes.find(t => matchesType(item, t.id)) ?? serviceTypes[0]
 }
 
@@ -720,13 +814,11 @@ function tipoIdForCategory(catId: string): number | null {
   return backendTipos.value.find(t => kws.some(k => normalize(t.nombre_tipo ?? '').includes(normalize(k))))?.id_tipo ?? null
 }
 
-// ─── State ─────────────────────────────────────────────────────────────────────
 const selectedItem = ref<ItemPlan | null>(null)
-const currentWeekStart = ref(0) // 0-based day index offset
+const currentWeekStart = ref(0)
 const draggedItemId = ref<number | null>(null)
 const dragOverDay = ref<number | null>(null)
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 const totalDays = computed(() => {
   if (!props.plan.fecha_inicio || !props.plan.fecha_fin) return 7
   const s = new Date(props.plan.fecha_inicio), e = new Date(props.plan.fecha_fin)
@@ -750,9 +842,59 @@ function dayIndexOf2(item: ItemPlan): number {
   return dayIndexForItem(item)
 }
 
+const mapItemsForView = computed(() => {
+  const coords = props.plan.items.filter(i => i.ubicacion_lat != null && i.ubicacion_lon != null)
+  if (mapDayFilter.value === 'all') return coords
+  return coords.filter(i => dayIndexForItem(i) === mapDayFilter.value)
+})
+
+const mapDayChips = computed(() => {
+  const out: {
+    index: number
+    dayNum: number
+    weekdayShort: string
+    coordsCount: number
+    activityCount: number
+  }[] = []
+  for (let idx = 1; idx <= totalDays.value; idx++) {
+    const date = getDateForDay(idx)
+    const row = props.plan.items.filter(i => dayIndexForItem(i) === idx)
+    const coordsCount = row.filter(i => i.ubicacion_lat != null && i.ubicacion_lon != null).length
+    out.push({
+      index: idx,
+      dayNum: date.getDate(),
+      weekdayShort: date.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase().slice(0, 3),
+      coordsCount,
+      activityCount: row.length,
+    })
+  }
+  return out
+})
+
+const mapLegendTitle = computed(() =>
+  mapDayFilter.value === 'all'
+    ? `Todas (${mapItemsForView.value.length})`
+    : `Día ${mapDayFilter.value} (${mapItemsForView.value.length})`,
+)
+
+const mapLegendEmpty = computed(() =>
+  mapDayFilter.value === 'all'
+    ? 'No hay ubicaciones registradas.'
+    : 'Este día no tiene ítems con ubicación en el mapa.',
+)
+
+const dayActivityWithoutCoords = computed(() => {
+  if (mapDayFilter.value === 'all') return 0
+  const ix = mapDayFilter.value
+  return props.plan.items.filter(
+    i =>
+      dayIndexForItem(i) === ix &&
+      (i.ubicacion_lat == null || i.ubicacion_lon == null),
+  ).length
+})
+
 const selectedDayIndex = ref<number | null>(null)
 
-// ─── Day panel resize ───────────────────────────────────────────────────────────
 const dayPanelWidth = ref(Math.round(window.innerWidth * 0.5))
 function startPanelResize(e: MouseEvent) {
   e.preventDefault()
@@ -782,7 +924,7 @@ const visibleDays = computed(() => {
   const days = []
   const weekSize = Math.min(7, totalDays.value)
   for (let i = 0; i < weekSize; i++) {
-    const dayIdx = currentWeekStart.value + i + 1 // 1-based
+    const dayIdx = currentWeekStart.value + i + 1
     if (dayIdx > totalDays.value) break
     const date = getDateForDay(dayIdx)
     const today = new Date()
@@ -823,7 +965,6 @@ function selectDay(idx: number) {
   selectedDayIndex.value = selectedDayIndex.value === idx ? null : idx
 }
 
-// ─── Drag & Drop ───────────────────────────────────────────────────────────────
 function onDragStart(event: DragEvent, item: ItemPlan) {
   draggedItemId.value = item.id_item
   if (event.dataTransfer) {
@@ -854,7 +995,6 @@ async function onDrop(targetDayIdx: number) {
   const sourceDayIdx = dayIndexForItem(item)
   if (sourceDayIdx === targetDayIdx) return
 
-  // Calculate new dates
   const targetDate = getDateForDay(targetDayIdx)
   let newStart: string | null = null
   let newEnd: string | null = null
@@ -863,7 +1003,7 @@ async function onDrop(targetDayIdx: number) {
     const oldStart = new Date(item.fecha_hora_inicio)
     const newStartDate = new Date(targetDate)
     newStartDate.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0)
-    newStart = newStartDate.toISOString().slice(0, 10) // date only
+    newStart = newStartDate.toISOString().slice(0, 10)
 
     if (item.fecha_hora_fin) {
       const oldEnd = new Date(item.fecha_hora_fin)
@@ -888,7 +1028,6 @@ async function onDrop(targetDayIdx: number) {
   draggedItemId.value = null
 }
 
-// ─── Formatters ────────────────────────────────────────────────────────────────
 function fmtFull(s: string) {
   return new Date(s).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
@@ -900,11 +1039,45 @@ function fmtPreviewDate(dt: string) {
   return new Date(dt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-// ─── Item edit form ────────────────────────────────────────────────────────────
+
 const editForm = reactive({
   nombre: '', fechaInicio: '', fechaFin: '',
   precioEstimado: '', montoTotal: '', estadoPago: '', localizador: '',
+  direccion: '',
 })
+const editMapCoords = ref<{ lat: number; lon: number } | null>(null)
+const geocodeEditLoading = ref(false)
+const geocodeEditError = ref('')
+
+async function lookupEditAddress() {
+  geocodeEditError.value = ''
+  const q = editForm.direccion.trim()
+  if (q.length < 4) {
+    geocodeEditError.value = 'Escribe al menos 4 caracteres.'
+    return
+  }
+  geocodeEditLoading.value = true
+  try {
+    const r = await geocodeApi.search(q)
+    editMapCoords.value = { lat: r.lat, lon: r.lon }
+    editForm.direccion = r.display_name
+    editDirty.value = true
+  } catch (err: unknown) {
+    const ax = err as { response?: { data?: { detail?: string } } }
+    geocodeEditError.value = typeof ax.response?.data?.detail === 'string'
+      ? ax.response.data.detail
+      : 'No se encontró la dirección.'
+  } finally {
+    geocodeEditLoading.value = false
+  }
+}
+
+function clearEditMapLocation() {
+  editMapCoords.value = null
+  editForm.direccion = ''
+  geocodeEditError.value = ''
+  editDirty.value = true
+}
 const editSaving = ref(false)
 const editDirty = ref(false)
 const editSuccess = ref(false)
@@ -922,7 +1095,13 @@ function openEditItem(item: ItemPlan) {
     montoTotal:    item.monto_total != null ? String(item.monto_total) : '',
     estadoPago:    item.estado_pago ?? '',
     localizador:   item.localizador_confirmacion ?? '',
+    direccion:     item.ubicacion_direccion ?? '',
   })
+  editMapCoords.value =
+    item.ubicacion_lat != null && item.ubicacion_lon != null
+      ? { lat: item.ubicacion_lat, lon: item.ubicacion_lon }
+      : null
+  geocodeEditError.value = ''
 }
 
 watch(editForm, () => { editDirty.value = true })
@@ -936,8 +1115,12 @@ async function saveEditItem() {
       fecha_hora_inicio:        editForm.fechaInicio || null,
       fecha_hora_fin:           editForm.fechaFin || null,
       precio_estimado:          editForm.precioEstimado ? parseFloat(editForm.precioEstimado) : null,
+      monto_total:              editForm.montoTotal ? parseFloat(editForm.montoTotal) : null,
       estado_pago:              editForm.estadoPago || null,
       localizador_confirmacion: editForm.localizador || null,
+      ubicacion_lat:            editMapCoords.value?.lat ?? null,
+      ubicacion_lon:            editMapCoords.value?.lon ?? null,
+      ubicacion_direccion:      editForm.direccion.trim() || null,
     })
     const idx = props.plan.items.findIndex(i => i.id_item === updated.id_item)
     if (idx !== -1) props.plan.items[idx] = updated
@@ -950,7 +1133,6 @@ async function saveEditItem() {
   }
 }
 
-// ─── Item actions ──────────────────────────────────────────────────────────────
 async function handleDeleteItem(item: ItemPlan) {
   if (!confirm(`¿Eliminar "${item.nombre_servicio || `Ítem ${item.id_item}`}"?`)) return
   await plansApi.deleteItem(props.plan.id_plan, item.id_item)
@@ -965,20 +1147,52 @@ function confirmDelete() {
   }
 }
 
-// ─── Add item modal ────────────────────────────────────────────────────────────
 const showAddModal = ref(false)
 const step = ref(1)
 const saving = ref(false)
 const showSuccess = ref(false)
-const form = reactive({ day: 1, typeId: 'actividad', nombre: '', fechaInicio: '', fechaFin: '', precio: '', estadoPago: '', localizador: '' })
+const form = reactive({ day: 1, typeId: 'actividad', nombre: '', fechaInicio: '', fechaFin: '', precio: '', estadoPago: '', localizador: '', direccion: '' })
+const addMapCoords = ref<{ lat: number; lon: number } | null>(null)
+const geocodeAddLoading = ref(false)
+const geocodeAddError = ref('')
+
+async function lookupAddAddress() {
+  geocodeAddError.value = ''
+  const q = form.direccion.trim()
+  if (q.length < 4) {
+    geocodeAddError.value = 'Escribe al menos 4 caracteres.'
+    return
+  }
+  geocodeAddLoading.value = true
+  try {
+    const r = await geocodeApi.search(q)
+    addMapCoords.value = { lat: r.lat, lon: r.lon }
+    form.direccion = r.display_name
+  } catch (err: unknown) {
+    const ax = err as { response?: { data?: { detail?: string } } }
+    geocodeAddError.value = typeof ax.response?.data?.detail === 'string'
+      ? ax.response.data.detail
+      : 'No se encontró la dirección.'
+  } finally {
+    geocodeAddLoading.value = false
+  }
+}
+
+function clearAddMapLocation() {
+  addMapCoords.value = null
+  form.direccion = ''
+  geocodeAddError.value = ''
+}
 const currentType = computed(() => serviceTypes.find(t => t.id === form.typeId) ?? serviceTypes[1])
 
 function openAddModal(day?: number) {
   Object.assign(form, {
     day: day ?? selectedDayIndex.value ?? 1,
     typeId: 'actividad', nombre: '', fechaInicio: '', fechaFin: '',
-    precio: '', estadoPago: '', localizador: ''
+    precio: '', estadoPago: '', localizador: '', direccion: '',
   })
+  addMapCoords.value = null
+  geocodeAddError.value = ''
   step.value = 1; showSuccess.value = false; showAddModal.value = true
 }
 
@@ -986,7 +1200,6 @@ async function confirmAdd() {
   if (!form.nombre || saving.value) return
   saving.value = true
   try {
-    // Build ISO date from day number
     const dayDate = getDateForDay(form.day)
     const dateStr = dayDate.toISOString().slice(0, 10)
     const newItem = await plansApi.createItem(props.plan.id_plan, {
@@ -997,6 +1210,9 @@ async function confirmAdd() {
       precio_estimado: form.precio ? parseFloat(form.precio) : null,
       estado_pago: form.estadoPago || null,
       localizador_confirmacion: form.localizador || null,
+      ubicacion_lat: addMapCoords.value?.lat ?? null,
+      ubicacion_lon: addMapCoords.value?.lon ?? null,
+      ubicacion_direccion: form.direccion.trim() || null,
     })
     props.plan.items.push(newItem)
     itemCategoryCache[newItem.id_item] = form.typeId
@@ -1007,7 +1223,6 @@ async function confirmAdd() {
 </script>
 
 <style scoped>
-/* ── THEMES ── */
 .dark-mode {
   --bg: #0a0a0f;
   --surface: #111118;
@@ -1029,7 +1244,6 @@ async function confirmAdd() {
   --drag-over: rgba(249,115,22,0.06);
 }
 
-/* ── ROOT ── */
 .pd-root {
   position: fixed; inset: 0; z-index: 9999;
   display: flex; flex-direction: column;
@@ -1039,7 +1253,6 @@ async function confirmAdd() {
 }
 .text-accent { color: var(--accent); }
 
-/* ── HEADER ── */
 .pd-header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -1067,7 +1280,6 @@ async function confirmAdd() {
 }
 .add-fab:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(249,115,22,.6); }
 
-/* Tab switcher */
 .tab-switcher {
   display: flex; align-items: center;
   background: var(--surface-2); border: 1px solid var(--border);
@@ -1086,16 +1298,12 @@ async function confirmAdd() {
 }
 .tab-btn:not(.tab-btn--active):hover { color: var(--text); background: var(--surface); }
 
-/* Week nav */
 .week-nav { background: rgba(249,115,22,.06); border: 1px solid rgba(249,115,22,.25); }
 .nav-btn { color: var(--accent); opacity: .65; transition: all .2s; }
 .nav-btn:hover:not(:disabled) { opacity: 1; color: var(--accent); background: rgba(249,115,22,.12); border-radius: 8px; }
 .nav-btn:disabled { opacity: 0.2; }
-
-/* ── BODY ── */
 .pd-body { background: var(--bg); display: flex; flex-direction: column; height: calc(100vh - 56px); }
 
-/* ── WEEKLY GRID ── */
 .week-grid-wrapper {
   flex: 1;
   overflow: hidden;
@@ -1106,7 +1314,6 @@ async function confirmAdd() {
   gap: 8px;
 }
 
-/* ── DAY COLUMN ── */
 .day-col {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1128,7 +1335,6 @@ async function confirmAdd() {
   border-color: rgba(249,115,22,.4);
 }
 
-/* ── DAY HEADER ── */
 .day-header {
   padding: 10px 10px 6px;
   cursor: pointer;
@@ -1167,7 +1373,6 @@ async function confirmAdd() {
   display: flex; align-items: center; justify-content: center;
 }
 
-/* ── ITEMS WRAPPER ── */
 .day-items-wrapper {
   flex: 1; overflow-y: auto; padding: 6px;
   min-height: 0;
@@ -1176,7 +1381,6 @@ async function confirmAdd() {
 }
 .day-items { display: flex; flex-direction: column; gap: 5px; }
 
-/* ── DROP INDICATOR ── */
 .drop-indicator {
   border: 2px dashed var(--accent);
   border-radius: 10px;
@@ -1192,7 +1396,6 @@ async function confirmAdd() {
 }
 @keyframes pulse-drop { from { opacity: .5; } to { opacity: 1; } }
 
-/* ── DAY ITEM ── */
 .day-item {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -1239,7 +1442,6 @@ async function confirmAdd() {
 }
 .del-item-btn:hover { background: rgba(239,68,68,.12); color: #ef4444; border-color: rgba(239,68,68,.3); }
 
-/* ── EMPTY DAY ── */
 .empty-day {
   border: 2px dashed var(--border); border-radius: 10px;
   padding: 16px;
@@ -1249,7 +1451,6 @@ async function confirmAdd() {
 }
 .empty-day:hover { border-color: rgba(249,115,22,.3); color: var(--accent); background: rgba(249,115,22,.04); }
 
-/* ── DAY FOOTER ── */
 .day-footer {
   padding: 5px 10px;
   border-top: 1px solid rgba(249,115,22,.2);
@@ -1259,7 +1460,6 @@ async function confirmAdd() {
 }
 .day-total { font-size: 13px; font-weight: 900; color: var(--accent); }
 
-/* ── SUMMARY BAR ── */
 .summary-bar {
   background: var(--surface);
   border-top: 2px solid rgba(249,115,22,.3);
@@ -1267,7 +1467,6 @@ async function confirmAdd() {
   flex-shrink: 0;
 }
 
-/* ── ITEM DRAWER (bottom sheet for item detail) ── */
 .item-drawer {
   position: fixed; inset: 0; z-index: 9998;
   display: flex; align-items: flex-end; justify-content: center;
@@ -1308,14 +1507,46 @@ async function confirmAdd() {
 .edit-save-btn { cursor: pointer; }
 .edit-save-btn:disabled { cursor: default; }
 
-/* ── ITEM MOVE TRANSITION ── */
+.geocode-btn {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  background: rgba(249,115,22,.14);
+  border: 1px solid rgba(249,115,22,.38);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+.geocode-btn:hover:not(:disabled) { background: rgba(249,115,22,.24); border-color: rgba(249,115,22,.55); }
+.geocode-btn:disabled { opacity: .45; cursor: default; }
+
+.edit-geo-msg { font-size: 11px; font-weight: 600; margin-top: 6px; line-height: 1.35; }
+.edit-geo-msg--err { color: #f87171; }
+.edit-geo-msg--ok { color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.edit-geo-clear {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.edit-geo-clear:hover { color: var(--accent); }
+
 .item-move-move { transition: transform .25s ease; }
 .item-move-enter-active { transition: all .2s ease; }
 .item-move-leave-active { transition: all .15s ease; }
 .item-move-enter-from { opacity: 0; transform: translateY(-8px) scale(.96); }
 .item-move-leave-to { opacity: 0; transform: scale(.94); }
 
-/* ── MODAL ── */
 .add-sheet {
   background: var(--surface);
   border-top: 1px solid var(--border);
@@ -1350,7 +1581,6 @@ async function confirmAdd() {
 .success-ring { animation: ring-in .4s cubic-bezier(.34,1.56,.64,1) both; }
 @keyframes ring-in { from { transform: scale(0) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
 
-/* ── TRANSITIONS ── */
 .drawer-enter-active { transition: all .3s cubic-bezier(.34,1.2,.64,1); }
 .drawer-leave-active { transition: all .2s ease; }
 .drawer-enter-from { opacity: 0; }
@@ -1371,36 +1601,131 @@ async function confirmAdd() {
 .success-pop-enter-from { opacity: 0; transform: scale(.92); }
 .success-pop-leave-to { opacity: 0; }
 
-/* ── MAP VIEW ── */
 .map-view { background: var(--bg); }
+.map-day-toolbar {
+  flex-shrink: 0;
+  z-index: 1001;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, var(--surface), var(--surface-2));
+}
+.map-day-toolbar-inner {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding: 10px 12px;
+}
+.map-day-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
+  min-width: 0;
+}
+.map-day-chip:hover { border-color: rgba(249,115,22,.35); }
+.map-day-chip:active { transform: scale(.98); }
+.map-day-chip--active {
+  border-color: rgba(249,115,22,.65);
+  background: rgba(249,115,22,.14);
+  box-shadow: 0 6px 20px rgba(249,115,22,.18);
+}
+.map-day-chip--all {
+  flex-direction: row;
+  align-items: center;
+  min-width: 144px;
+  gap: 10px;
+}
+.map-day-chip-icon { flex-shrink: 0; color: var(--accent); opacity: .9; }
+.map-day-chip-all-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.map-day-chip-title {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  line-height: 1.15;
+}
+.map-day-chip--all .map-day-chip-title { letter-spacing: .06em; }
+.map-day-chip-date {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.map-day-chip-meta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  opacity: .95;
+}
+.map-day-hint {
+  padding: 0 14px 10px;
+  margin: -4px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.map-canvas { min-height: 200px; }
+
 .map-legend {
   position: absolute; bottom: 16px; left: 16px; z-index: 1000;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 12px 14px;
+  border-radius: 16px; padding: 10px 12px;
   display: flex; flex-direction: column; gap: 8px;
-  max-height: 220px; overflow-y: auto;
+  max-height: min(38vh, 280px); overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0,0,0,.25);
-  min-width: 200px;
+  min-width: 210px;
+  max-width: min(92vw, 300px);
+}
+.map-legend-head {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--muted);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border);
 }
 .map-legend-item {
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; transition: opacity .15s; padding: 2px 0;
+  display: flex; align-items: flex-start; gap: 8px;
+  cursor: pointer; transition: opacity .15s; padding: 4px 0;
 }
 .map-legend-item:hover { opacity: .7; }
-.map-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.map-legend-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.map-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.map-legend-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.map-legend-name { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 208px; }
+.map-legend-sub { font-size: 10px; font-weight: 600; color: var(--muted); line-height: 1.35; word-break: break-word; white-space: normal; }
 .map-no-coords {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 8px; color: var(--muted); font-size: 12px; font-weight: 600; text-align: center;
+  padding: 12px 8px; color: var(--muted); font-size: 12px; font-weight: 600; text-align: center;
+}
+.map-no-coords--soft {
+  opacity: .92;
+  padding-top: 8px;
 }
 
-/* Quick fade */
 .fade-quick-enter-active { transition: opacity .18s, transform .18s; }
 .fade-quick-leave-active { transition: opacity .12s; }
 .fade-quick-enter-from { opacity: 0; transform: translateX(6px); }
 .fade-quick-leave-to { opacity: 0; }
 
-/* ── DAY DETAIL PANEL ── */
 .day-panel-overlay {
   position: fixed; inset: 0; z-index: 9997;
   display: flex; justify-content: flex-end;
@@ -1419,7 +1744,6 @@ async function confirmAdd() {
   flex-shrink: 0;
 }
 
-/* Resize handle */
 .day-panel-resizer {
   position: absolute; left: 0; top: 0; bottom: 0;
   width: 6px; cursor: col-resize; z-index: 10;
@@ -1439,7 +1763,6 @@ async function confirmAdd() {
   height: 60px;
 }
 
-/* Panel header */
 .day-panel-header {
   display: flex; align-items: center; gap: 12px;
   padding: 20px 18px 14px;
@@ -1474,7 +1797,6 @@ async function confirmAdd() {
 }
 .day-panel-close:hover { color: var(--text); border-color: rgba(255,255,255,.15); }
 
-/* Type breakdown chips */
 .day-panel-types {
   display: flex; gap: 6px; padding: 10px 18px;
   border-bottom: 1px solid var(--border);
@@ -1489,13 +1811,11 @@ async function confirmAdd() {
   transition: all .15s;
 }
 
-/* Panel body - scrollable items */
 .day-panel-body {
   flex: 1; overflow-y: auto; padding: 14px;
   scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
 
-/* Empty state */
 .day-panel-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 48px 24px; gap: 12px; text-align: center;
@@ -1516,7 +1836,6 @@ async function confirmAdd() {
 }
 .day-panel-empty-btn:hover { background: rgba(249,115,22,.18); }
 
-/* Items */
 .day-panel-items { display: flex; flex-direction: column; gap: 8px; }
 .day-panel-item {
   display: flex; align-items: flex-start; gap: 10px;
@@ -1559,7 +1878,6 @@ async function confirmAdd() {
 }
 .day-panel-del:hover { background: rgba(239,68,68,.12); color: #ef4444; border-color: rgba(239,68,68,.3); }
 
-/* Panel footer */
 .day-panel-footer {
   padding: 14px 18px;
   border-top: 1px solid var(--border);
@@ -1578,7 +1896,6 @@ async function confirmAdd() {
 }
 .day-panel-add-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(249,115,22,.5); }
 
-/* Panel transition */
 .day-panel-enter-active { transition: all .3s cubic-bezier(.34,1.1,.64,1); }
 .day-panel-leave-active { transition: all .22s ease; }
 .day-panel-enter-from .day-panel { transform: translateX(100%); }

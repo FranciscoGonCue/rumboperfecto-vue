@@ -1,7 +1,6 @@
 <template>
   <div class="p-5 lg:p-10 min-h-full">
     <div class="max-w-5xl mx-auto">
-      <!-- Back button -->
       <div class="mb-6">
         <button
           class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
@@ -22,7 +21,6 @@
           ? 'bg-rp-surface border border-rp-border shadow-[0_24px_48px_rgba(0,0,0,0.5)]'
           : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <!-- Hero image -->
         <div class="relative">
           <img
             :src="activity.image"
@@ -31,7 +29,6 @@
           />
           <div v-if="store.isDark" class="absolute inset-0 bg-gradient-to-t from-rp-surface/80 via-transparent to-transparent" />
 
-          <!-- Category badge -->
           <div class="absolute top-4 left-4">
             <span
               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md"
@@ -44,7 +41,6 @@
             </span>
           </div>
 
-          <!-- Difficulty badge -->
           <div class="absolute top-4 right-4">
             <span
               class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wide backdrop-blur-md"
@@ -54,7 +50,6 @@
             </span>
           </div>
 
-          <!-- Duration chip -->
           <div class="absolute bottom-4 left-4">
             <span
               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md"
@@ -69,7 +64,6 @@
         </div>
 
         <div class="p-6 lg:p-9 space-y-6">
-          <!-- Header -->
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2
@@ -113,12 +107,10 @@
 
           <ServiceReviewsPanel v-if="activity" :servicio-id="String(activity.id)" class="mt-2" />
 
-          <!-- Description -->
           <p class="leading-relaxed text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ activity.description }}
           </p>
 
-          <!-- Includes -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               ¿Qué incluye?
@@ -138,7 +130,6 @@
             </div>
           </div>
 
-          <!-- Requirements -->
           <div v-if="activity.requirements?.length">
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Requisitos
@@ -158,7 +149,6 @@
             </div>
           </div>
 
-          <!-- Tags -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Etiquetas
@@ -175,7 +165,6 @@
             </div>
           </div>
 
-          <!-- Booking section -->
           <div
             class="rounded-2xl p-5 space-y-5 transition-colors"
             :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-gray-50 border border-gray-100'"
@@ -184,7 +173,6 @@
               Reservar actividad
             </h3>
 
-            <!-- Calendario de selección de fecha -->
             <div
               class="rounded-2xl p-3 overflow-hidden rp-calendar-shell"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -192,7 +180,6 @@
               <FullCalendar :key="calendarKey" :options="calendarOptions" />
             </div>
 
-            <!-- Fecha seleccionada + Turno -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 class="rounded-xl p-3 transition-colors"
@@ -223,7 +210,6 @@
               </div>
             </div>
 
-            <!-- Participantes -->
             <div
               class="rounded-xl p-3 transition-colors"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -249,7 +235,6 @@
               </div>
             </div>
 
-            <!-- Total -->
             <div
               v-if="bookingDate && bookingShift"
               class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 transition-colors"
@@ -297,7 +282,6 @@
     </div>
   </div>
 
-  <!-- Plan selector modal -->
   <Teleport to="body">
     <Transition name="modal">
       <div
@@ -592,7 +576,6 @@ function confirmAddToPlan() {
 .modal-enter-from,
 .modal-leave-to { opacity: 0; transform: scale(0.98); }
 
-/* ── FullCalendar ── */
 :deep(.rp-calendar-shell .fc) {
   --rp-orange: #f97316;
   --rp-orange-soft: rgba(249,115,22,0.15);

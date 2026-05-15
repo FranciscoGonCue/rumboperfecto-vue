@@ -1,11 +1,9 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4" :class="store.isDark ? 'bg-rp-bg' : 'bg-white'">
-    <!-- Particle Background -->
     <div class="absolute inset-0 -z-10 overflow-hidden">
       <ParticleBackground v-if="!store.isDark" :is-dark="store.isDark" />
     </div>
 
-    <!-- Animated Gradient Background (Dark Mode) -->
     <div
       v-if="store.isDark"
       class="absolute inset-0 -z-10 overflow-hidden"
@@ -14,7 +12,6 @@
     </div>
 
     <div class="w-full max-w-md">
-      <!-- Header -->
       <div class="text-center mb-8">
         <div class="w-16 h-16 bg-rp-accent rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-900/40">
           <Plane :size="32" class="text-white" />
@@ -27,14 +24,12 @@
         </p>
       </div>
 
-      <!-- Auth Form Container -->
       <div
         class="rounded-3xl p-8 backdrop-blur-xl transition-all duration-300 shadow-2xl"
         :class="store.isDark
           ? 'bg-rp-surface/90 border border-rp-border'
           : 'bg-white/80 border border-orange-100 shadow-orange-200/50'"
       >
-        <!-- Login Form -->
         <div v-if="!isRegister">
           <h2 class="text-2xl font-black uppercase tracking-tight mb-2" :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">
             Iniciar Sesión
@@ -43,7 +38,6 @@
             Bienvenido de vuelta. Ingresa tus credenciales.
           </p>
 
-          <!-- Error Message -->
           <Transition name="fade">
             <div
               v-if="authError"
@@ -54,7 +48,6 @@
             </div>
           </Transition>
 
-          <!-- Email Input -->
           <div class="mb-4">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Correo Electrónico
@@ -71,7 +64,6 @@
             />
           </div>
 
-          <!-- Password Input -->
           <div class="mb-6">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Contraseña
@@ -88,7 +80,6 @@
             />
           </div>
 
-          <!-- Login Button -->
           <button
             @click="handleLogin"
             :disabled="isLoading || !loginForm.email || !loginForm.password"
@@ -98,14 +89,12 @@
             {{ isLoading ? 'Iniciando...' : 'Iniciar Sesión' }}
           </button>
 
-          <!-- Divider -->
           <div class="flex items-center space-x-3 my-6">
             <div class="flex-1 h-px" :class="store.isDark ? 'bg-rp-border' : 'bg-orange-200'" />
             <span class="text-xs font-bold uppercase" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">O</span>
             <div class="flex-1 h-px" :class="store.isDark ? 'bg-rp-border' : 'bg-orange-200'" />
           </div>
 
-          <!-- Register Link -->
           <p class="text-center text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
             ¿No tienes cuenta?
             <button
@@ -117,7 +106,6 @@
           </p>
         </div>
 
-        <!-- Register Form -->
         <div v-else>
           <h2 class="text-2xl font-black uppercase tracking-tight mb-2" :class="store.isDark ? 'text-rp-text' : 'text-gray-900'">
             Crear Cuenta
@@ -126,7 +114,6 @@
             Únete a RumboPerfecto y comienza a planificar tus viajes.
           </p>
 
-          <!-- Error Message -->
           <Transition name="fade">
             <div
               v-if="authError"
@@ -137,7 +124,6 @@
             </div>
           </Transition>
 
-          <!-- Name Input -->
           <div class="mb-4">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Nombre Completo
@@ -154,7 +140,6 @@
             />
           </div>
 
-          <!-- Seller Toggle -->
           <div class="mb-4 flex items-center justify-between gap-4 rounded-xl px-4 py-3 border"
                :class="store.isDark ? 'border-rp-border bg-rp-surface-2/80' : 'border-orange-200 bg-orange-50'">
             <div>
@@ -164,7 +149,6 @@
             <input v-model="registerForm.seller" type="checkbox" :disabled="isLoading" class="h-5 w-5 accent-orange-500" />
           </div>
 
-          <!-- Email Input -->
           <div class="mb-4">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Correo Electrónico
@@ -181,7 +165,6 @@
             />
           </div>
 
-          <!-- Password Input -->
           <div class="mb-4">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Contraseña
@@ -198,7 +181,6 @@
             />
           </div>
 
-          <!-- Password Confirm Input -->
           <div class="mb-6">
             <label class="block text-xs font-bold uppercase tracking-widest mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
               Confirmar Contraseña
@@ -215,14 +197,12 @@
             />
           </div>
 
-          <!-- Password Mismatch Error -->
           <Transition name="fade">
             <p v-if="registerForm.password !== registerForm.passwordConfirm && registerForm.passwordConfirm" class="text-xs text-red-500 font-semibold mb-4">
               Las contraseñas no coinciden.
             </p>
           </Transition>
 
-          <!-- Register Button -->
           <button
             @click="handleRegister"
             :disabled="isLoading || !registerForm.email || !registerForm.name || !registerForm.password || registerForm.password !== registerForm.passwordConfirm"
@@ -232,14 +212,12 @@
             {{ isLoading ? 'Creando cuenta...' : 'Crear Cuenta' }}
           </button>
 
-          <!-- Divider -->
           <div class="flex items-center space-x-3 my-6">
             <div class="flex-1 h-px" :class="store.isDark ? 'bg-rp-border' : 'bg-orange-200'" />
             <span class="text-xs font-bold uppercase" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">O</span>
             <div class="flex-1 h-px" :class="store.isDark ? 'bg-rp-border' : 'bg-orange-200'" />
           </div>
 
-          <!-- Login Link -->
           <p class="text-center text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
             ¿Ya tienes cuenta?
             <button
@@ -252,7 +230,6 @@
         </div>
       </div>
 
-      <!-- Footer Text -->
       <p class="text-center text-xs mt-6" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
         Al continuar, aceptas nuestros términos de servicio
       </p>
@@ -292,7 +269,6 @@ async function handleLogin() {
   if (!success) {
     authError.value = error.value ?? 'Credenciales invalidas. Intenta de nuevo.'
   } else {
-    // Success - the store will handle redirecting to the home view
     store.setCurrentView('inicio')
   }
 }
@@ -312,7 +288,6 @@ async function handleRegister() {
   if (!success) {
     authError.value = error.value ?? 'No se pudo crear la cuenta. Intenta de nuevo.'
   } else {
-    // Success - the store will handle redirecting to the home view
     store.setCurrentView('inicio')
     isRegister.value = false
   }

@@ -6,9 +6,9 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
   },
   plugins: [vue()],
-  // Reduce "Outdated Optimize Dep" / 504 al cambiar deps o reinicios raros del dev server
   optimizeDeps: {
     include: ['three', 'leaflet', 'chroma-js', 'lucide-vue-next', 'vue', 'pinia'],
   },

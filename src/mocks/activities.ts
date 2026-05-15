@@ -19,7 +19,6 @@ export type ActivityMock = {
   requirements: string[]
   tags: string[]
   availableShifts: string[]
-  /** Fecha YYYY-MM-DD → turnos ya reservados (API: turnos_ocupados) */
   occupiedShiftsByDate: Record<string, string[]>
   availableFrom: string
   availableTo: string

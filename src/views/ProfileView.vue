@@ -11,7 +11,6 @@
            style="background: radial-gradient(circle, #f97316 0%, transparent 70%);"></div>
     </div>
 
-    <!-- Profile card -->
     <div class="relative z-10 p-10 rounded-[40px] text-center max-w-md w-full transition-colors duration-300"
          :class="store.isDark
            ? 'bg-rp-surface border border-rp-border shadow-[0_24px_64px_rgba(0,0,0,0.6)]'
@@ -76,7 +75,6 @@
     </div>
   </div>
 
-  <!-- ─── Edit Profile Modal ─────────────────────────────────────── -->
   <Teleport to="body">
     <Transition name="modal">
       <div
@@ -84,17 +82,14 @@
         class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         @click.self="closeModal"
       >
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeModal" />
 
-        <!-- Panel -->
         <div
           class="relative w-full max-w-md rounded-[32px] p-8 transition-colors duration-300 max-h-[90vh] overflow-y-auto"
           :class="store.isDark
             ? 'bg-rp-surface border border-rp-border shadow-[0_32px_80px_rgba(0,0,0,0.8)]'
             : 'bg-white border border-orange-50 shadow-2xl'"
         >
-          <!-- Header -->
           <div class="flex items-center justify-between mb-8">
             <h3 class="text-xl font-black uppercase tracking-tight"
                 :class="store.isDark ? 'text-rp-text' : 'text-gray-800'"
@@ -110,7 +105,6 @@
             >✕</button>
           </div>
 
-          <!-- Success banner -->
           <Transition name="fade">
             <div
               v-if="successMessage"
@@ -123,7 +117,6 @@
             </div>
           </Transition>
 
-          <!-- Error banner -->
           <Transition name="fade">
             <div
               v-if="errorMessage"
@@ -136,7 +129,6 @@
             </div>
           </Transition>
 
-          <!-- ── Section: Personal info ── -->
           <p class="text-[10px] font-bold uppercase tracking-widest mb-3"
              :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
             Información Personal
@@ -175,7 +167,6 @@
             </div>
           </div>
 
-          <!-- ── Section: Account type ── -->
           <p class="text-[10px] font-bold uppercase tracking-widest mb-3"
              :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
             Tipo de Cuenta
@@ -209,7 +200,6 @@
             </button>
           </div>
 
-          <!-- Save profile button -->
           <button
             class="w-full py-3.5 font-bold rounded-2xl transition-colors text-sm mb-6"
             :class="store.isDark
@@ -224,7 +214,6 @@
 
           <div class="border-t mb-6" :class="store.isDark ? 'border-rp-border' : 'border-gray-100'" />
 
-          <!-- ── Section: Password ── -->
           <p class="text-[10px] font-bold uppercase tracking-widest mb-3"
              :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
             Cambiar Contraseña
@@ -319,8 +308,7 @@ const destinationsCount = computed(() => {
 async function handleLogout() {
   await logout()
 }
-
-// ── Modal state ──────────────────────────────────────────────────────────────
+  
 const showModal = ref(false)
 const savingProfile = ref(false)
 const savingPassword = ref(false)

@@ -154,7 +154,6 @@
   }
 }
 
-/* Leaflet + Tailwind: preflight y capas base rompen teselas (mapa vacío / negro). */
 .leaflet-container .leaflet-tile-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;

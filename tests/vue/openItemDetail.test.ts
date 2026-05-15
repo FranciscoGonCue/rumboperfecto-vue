@@ -1,17 +1,8 @@
-/**
- * Tests para la función openItemDetail en HomeView y la cadena completa:
- * openItemDetail → store.openServiceDetail → serviciosApi.getOne
- *
- * El bug original: los IDs en BD son strings como "aloj-001", "act-001".
- * parseInt("aloj-001") devolvía NaN y nunca se abría el detalle.
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
 import { detectServicioView } from '@/services/api'
 import type { Servicio } from '@/services/api'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeServicio(overrides: Partial<Servicio> = {}): Servicio {
   return {
@@ -54,8 +45,6 @@ function makeServicio(overrides: Partial<Servicio> = {}): Servicio {
     ...overrides,
   }
 }
-
-// ── Tests: detectServicioView ─────────────────────────────────────────────────
 
 describe('detectServicioView', () => {
   it('devuelve "actividad" para tipo Actividad', () => {
@@ -115,8 +104,6 @@ describe('detectServicioView', () => {
   })
 })
 
-// ── Tests: store.openServiceDetail ────────────────────────────────────────────
-
 describe('store.openServiceDetail', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -126,7 +113,6 @@ describe('store.openServiceDetail', () => {
     const store = useAppStore()
     const svc = makeServicio()
 
-    // Mock: la API tarda pero eventualmente devuelve el servicio
     vi.spyOn(store, 'openServiceDetail').mockImplementation(async (_id) => {
       store.currentView = 'servicio'
       store.selectedServicioLoading = true
@@ -182,17 +168,11 @@ describe('store.openServiceDetail', () => {
   })
 })
 
-// ── Tests: lógica openItemDetail (simulando el comportamiento de HomeView) ───
-
 describe('openItemDetail logic', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  /**
-   * Replica exacta de la función corregida en HomeView.vue.
-   * Esto verifica que el fix del bug funciona correctamente.
-   */
   function openItemDetail(
     item: { id: string },
     openServiceDetail: (id: string) => void,
@@ -239,19 +219,14 @@ describe('openItemDetail logic', () => {
     const spy = vi.fn()
     const warn = vi.fn()
     openItemDetail({ id: 'api-' }, spy, warn)
-    // "api-".slice(4) = "" → vacío → warn
     expect(spy).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalled()
   })
 
   it('BUG REGRESIÓN: parseInt de "aloj-001" sería NaN — la nueva lógica NO usa parseInt', () => {
-    // Verifica que el fix no rompe con IDs que antes causaban NaN
     const ids = ['aloj-001', 'act-042', 'rest-007', 'trans-003']
     ids.forEach((rawId) => {
-      // Comportamiento antiguo (bug): parseInt devolvía NaN
       expect(parseInt(rawId, 10)).toBeNaN()
-
-      // Comportamiento nuevo (fix): el raw string es truthy y se usa directamente
       expect(rawId).toBeTruthy()
     })
   })

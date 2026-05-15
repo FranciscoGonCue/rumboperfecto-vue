@@ -4,7 +4,6 @@
 
     <div class="max-w-4xl mx-auto px-5 lg:px-10 pt-8 pb-16">
 
-      <!-- Header -->
       <div class="mb-8 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg"
@@ -36,14 +35,12 @@
         </div>
       </div>
 
-      <!-- Loading -->
       <div v-if="loading" class="flex flex-col items-center py-20 gap-3">
         <div class="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin"
              style="border-color: var(--rp-accent) transparent var(--rp-accent) var(--rp-accent)"></div>
         <p class="text-sm font-semibold" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">Cargando reservas…</p>
       </div>
 
-      <!-- Error -->
       <div v-else-if="error" class="text-center py-20">
         <p class="font-bold text-red-500 mb-4">{{ error }}</p>
         <button @click="loadReservas"
@@ -51,7 +48,6 @@
                 style="background: var(--rp-accent)">Reintentar</button>
       </div>
 
-      <!-- Empty -->
       <div v-else-if="!filteredReservas.length" class="text-center py-24">
         <CalendarX :size="48" class="mx-auto mb-4 opacity-20" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'" />
         <p class="font-bold text-lg" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
@@ -62,7 +58,6 @@
         </p>
       </div>
 
-      <!-- Lista reservas -->
       <TransitionGroup v-else name="card-list" tag="div" class="space-y-4">
         <div
           v-for="r in filteredReservas" :key="r.id"
@@ -72,7 +67,6 @@
             : 'bg-white border-gray-100 shadow-sm hover:shadow-md'"
         >
           <div class="flex gap-0">
-            <!-- Imagen -->
             <div class="w-24 h-24 lg:w-32 lg:h-32 flex-shrink-0 overflow-hidden">
               <img
                 v-if="r.servicio_imagen"
@@ -86,7 +80,6 @@
               </div>
             </div>
 
-            <!-- Info -->
             <div class="flex-1 p-4 flex flex-col justify-between min-w-0">
               <div>
                 <div class="flex items-start justify-between gap-2 mb-1">
@@ -107,7 +100,6 @@
                   </span>
                 </div>
 
-                <!-- Fechas y turno -->
                 <div class="flex flex-wrap gap-3 mt-2 text-xs font-semibold"
                      :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                   <span class="flex items-center gap-1">
@@ -128,7 +120,6 @@
                 </div>
               </div>
 
-              <!-- Acciones -->
               <div class="flex items-center justify-between mt-3">
                 <p class="text-[10px]" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
                   Ref. #{{ r.id }} · {{ formatDatetime(r.creado_en) }}
@@ -147,7 +138,6 @@
             </div>
           </div>
 
-          <!-- Añadir reserva existente a un plan (una sola vez por reserva) -->
           <div
             v-if="r.estado !== 'Cancelada'"
             class="border-t transition-colors px-4 py-4"
@@ -270,7 +260,6 @@
 
     </div>
 
-    <!-- Toast -->
     <Transition name="toast">
       <div v-if="toast.show"
            class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-bold text-white"
@@ -443,7 +432,6 @@ function normalizeTipoLabel(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
-/** id_tipo del catálogo para el ItemPlan (evita clasificar todo como Alojamiento en el planificador). */
 async function resolveTipoIdForReserva(r: Reserva): Promise<number | null> {
   if (r.servicio_tipo_id != null) return r.servicio_tipo_id
   const label = r.servicio_tipo?.trim()

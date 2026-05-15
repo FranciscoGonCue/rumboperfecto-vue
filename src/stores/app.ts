@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { activitiesApi, authApi, detectServicioView, plansApi, serviciosApi, setSessionExpiredHandler, tripsApi } from '@/services/api'
+import { authApi, detectServicioView, plansApi, serviciosApi, setSessionExpiredHandler } from '@/services/api'
 import type { Servicio } from '@/services/api'
 import type { Activity, PlanViaje, Trip, User, View } from '@/types'
 
@@ -21,7 +21,6 @@ function saveLocalTrips(trips: Trip[]): void {
   try {
     localStorage.setItem(LOCAL_TRIPS_KEY, JSON.stringify(trips))
   } catch {
-    // Storage might be full or unavailable
   }
 }
 
@@ -163,7 +162,6 @@ export const useAppStore = defineStore('app', () => {
     try {
       selectedServicio.value = await serviciosApi.getOne(id)
     } catch {
-      // No recargamos el objeto si falla la red.
     }
   }
 
@@ -204,9 +202,8 @@ export const useAppStore = defineStore('app', () => {
     networkError.value = null
 
     try {
-      const [resolvedUser, resolvedTrips] = await Promise.all([authApi.me(), tripsApi.getAll()])
-      user.value = resolvedUser
-      trips.value = resolvedTrips
+      user.value = await authApi.me()
+      trips.value = loadLocalTrips()
     } catch {
       clearSessionState()
       networkError.value = 'No se pudo restaurar tu sesion. Inicia sesion nuevamente.'
@@ -258,7 +255,7 @@ export const useAppStore = defineStore('app', () => {
       const session = await authApi.login({ email, password })
       authApi.saveSession(session.access, session.refresh)
       user.value = session.user
-      trips.value = await tripsApi.getAll()
+      trips.value = loadLocalTrips()
       return true
     } catch (error: any) {
       networkError.value = extractApiErrorMessage(error, 'No se pudo iniciar sesion.')
@@ -310,24 +307,16 @@ export const useAppStore = defineStore('app', () => {
     try {
       await authApi.logout()
     } catch {
-      // ignored on purpose; local session cleanup still required
     } finally {
       clearSessionState()
     }
   }
 
   async function loadTrips(): Promise<void> {
-    if (!isAuthenticated.value) {
-      trips.value = []
-      return
-    }
-
     tripsLoading.value = true
     networkError.value = null
     try {
-      trips.value = await tripsApi.getAll()
-    } catch {
-      networkError.value = 'No se pudieron cargar los viajes.'
+      trips.value = loadLocalTrips()
     } finally {
       tripsLoading.value = false
     }
@@ -336,81 +325,38 @@ export const useAppStore = defineStore('app', () => {
   async function addTrip(trip: Trip): Promise<void> {
     networkError.value = null
 
-    if (!isAuthenticated.value) {
-      const localTrip: Trip = {
-        ...trip,
-        id: `local-${Date.now()}`,
-        activities: trip.activities ?? {},
-      }
-      trips.value.unshift(localTrip)
-      saveLocalTrips(trips.value)
-      return
+    const localTrip: Trip = {
+      ...trip,
+      id:
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? `local-${crypto.randomUUID()}`
+          : `local-${Date.now()}`,
+      activities: trip.activities ?? {},
     }
-
-    try {
-      const created = await tripsApi.create({
-        title: trip.title,
-        start_date: trip.startDate,
-        end_date: trip.endDate,
-      })
-      trips.value.unshift(created)
-      saveLocalTrips(trips.value)
-    } catch {
-      networkError.value = 'No se pudo crear el viaje.'
-      throw new Error('trip-create-failed')
-    }
+    trips.value.unshift(localTrip)
+    saveLocalTrips(trips.value)
   }
 
   async function deleteTrip(id: string): Promise<void> {
     networkError.value = null
 
-    if (!isAuthenticated.value || id.startsWith('local-')) {
-      trips.value = trips.value.filter((trip) => trip.id !== id)
-      saveLocalTrips(trips.value)
-      return
-    }
-
-    try {
-      await tripsApi.delete(id)
-      trips.value = trips.value.filter((trip) => trip.id !== id)
-      saveLocalTrips(trips.value)
-    } catch {
-      networkError.value = 'No se pudo eliminar el viaje.'
-      throw new Error('trip-delete-failed')
-    }
+    trips.value = trips.value.filter((trip) => trip.id !== id)
+    saveLocalTrips(trips.value)
   }
 
   async function addActivity(tripId: string, day: number, activity: Activity): Promise<void> {
     networkError.value = null
 
-    if (!isAuthenticated.value || tripId.startsWith('local-')) {
-      const trip = trips.value.find((t) => t.id === tripId)
-      if (!trip) {
-        networkError.value = 'Viaje no encontrado.'
-        throw new Error('trip-not-found')
-      }
-      if (!trip.activities[day]) {
-        trip.activities[day] = []
-      }
-      trip.activities[day].push({ ...activity, id: `local-act-${Date.now()}` })
-      saveLocalTrips(trips.value)
-      return
+    const trip = trips.value.find((t) => t.id === tripId)
+    if (!trip) {
+      networkError.value = 'Viaje no encontrado.'
+      throw new Error('trip-not-found')
     }
-
-    try {
-      await activitiesApi.create({
-        trip: tripId,
-        day,
-        title: activity.title,
-        location: activity.location,
-        time: activity.time,
-      })
-      await loadTrips()
-      saveLocalTrips(trips.value)
-    } catch {
-      networkError.value = 'No se pudo agregar la actividad.'
-      throw new Error('activity-create-failed')
+    if (!trip.activities[day]) {
+      trip.activities[day] = []
     }
+    trip.activities[day].push({ ...activity, id: `local-act-${Date.now()}` })
+    saveLocalTrips(trips.value)
   }
 
   async function createPlan(payload: { nombre_plan: string; fecha_inicio: string; fecha_fin: string }): Promise<PlanViaje> {
@@ -437,7 +383,6 @@ export const useAppStore = defineStore('app', () => {
     try {
       planes.value = await plansApi.getAll()
     } catch {
-      // silently fail; planes stays as previous value
     } finally {
       planesLoading.value = false
     }

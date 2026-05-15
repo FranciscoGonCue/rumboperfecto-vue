@@ -1,16 +1,12 @@
 import axios from 'axios'
 
 import type {
-  Activity,
   AuthResponse,
-  BackendActivity,
-  BackendTrip,
   BackendUser,
   ItemPlan,
   LoginPayload,
   PlanViaje,
   RegisterPayload,
-  Trip,
   User,
 } from '@/types'
 
@@ -149,34 +145,6 @@ export function mapBackendUser(user: BackendUser): User {
   }
 }
 
-export function mapBackendTrip(trip: BackendTrip): Trip {
-  const groupedActivities: Record<number, Activity[]> = {}
-
-  for (const activity of trip.activities ?? []) {
-    if (!groupedActivities[activity.day]) {
-      groupedActivities[activity.day] = []
-    }
-    groupedActivities[activity.day].push(mapBackendActivity(activity))
-  }
-
-  return {
-    id: String(trip.id),
-    title: trip.title,
-    startDate: trip.start_date,
-    endDate: trip.end_date,
-    activities: groupedActivities,
-  }
-}
-
-export function mapBackendActivity(activity: BackendActivity): Activity {
-  return {
-    id: String(activity.id),
-    title: activity.title,
-    location: activity.location,
-    time: activity.time.slice(0, 5),
-  }
-}
-
 function mapAuthResponse(response: AuthResponse): { user: User; access: string; refresh: string } {
   return {
     user: mapBackendUser(response.user),
@@ -234,41 +202,6 @@ export const authApi = {
   },
 }
 
-export const tripsApi = {
-  async getAll(): Promise<Trip[]> {
-    const response = await api.get<{ results?: BackendTrip[] } | BackendTrip[]>('/trips/')
-    const raw = Array.isArray(response.data) ? response.data : response.data.results ?? []
-    return raw.map(mapBackendTrip)
-  },
-
-  async create(payload: { title: string; start_date: string; end_date: string }): Promise<Trip> {
-    const response = await api.post<BackendTrip>('/trips/', payload)
-    return mapBackendTrip(response.data)
-  },
-
-  async delete(id: string): Promise<void> {
-    await api.delete(`/trips/${id}/`)
-  },
-}
-
-export const activitiesApi = {
-  async create(
-    payload: { trip: string; day: number; title: string; location: string; time: string },
-  ): Promise<Activity> {
-    const response = await api.post<BackendActivity>('/activities/', payload)
-    return mapBackendActivity(response.data)
-  },
-}
-
-export const tasksAPI = {
-  getAll: (params?: Record<string, unknown>) => api.get('/tasks/', { params }),
-  getById: (id: number) => api.get(`/tasks/${id}/`),
-  create: (data: Record<string, unknown>) => api.post('/tasks/', data),
-  update: (id: number, data: Record<string, unknown>) => api.put(`/tasks/${id}/`, data),
-  delete: (id: number) => api.delete(`/tasks/${id}/`),
-}
-
-// ── Catálogo de Servicios ────────────────────────────────────────────────────
 
 export interface TipoServicioAPI {
   id_tipo: number
@@ -284,7 +217,6 @@ export interface DetalleAlojamientoAPI {
   fecha_disponible_desde: string | null
   fecha_disponible_hasta: string | null
   fechas_no_disponibles: string[] | null
-  /** Texto libre o lista serializada desde el backend */
   servicios_extra?: string | null
 }
 
@@ -334,7 +266,6 @@ export interface DetalleActividadAPI {
   turnos_ocupados: Record<string, string[]> | null
 }
 
-/** Reseña embebida en GET servicio (`resenas`). */
 export interface ResenaUsuarioAPI {
   id: number
   username: string
@@ -359,7 +290,6 @@ export interface Servicio {
   ubicacion_lon: number | null
   imagen_url: string | null
   disponible: boolean | null
-  // Campos comunes añadidos en migración 0004
   valoracion: number | null
   num_resenas: number | null
   ciudad: string | null
@@ -368,7 +298,6 @@ export interface Servicio {
   moneda: string | null
   etiquetas: string[] | null
   destacado: boolean | null
-  /** Lista de reseñas del servicio (GET catálogo / detalle con prefetch). */
   resenas?: ResenaServicioAPI[]
   detalle_alojamiento: DetalleAlojamientoAPI | null
   detalle_transporte: DetalleTransporteAPI | null
@@ -376,7 +305,6 @@ export interface Servicio {
   detalle_actividad: DetalleActividadAPI | null
 }
 
-// ── Adaptadores Servicio → Mock types ────────────────────────────────────────
 
 import type { Accommodation } from '@/types'
 import type { ActivityMock, ActivityDifficulty } from '@/mocks/activities'
@@ -391,7 +319,6 @@ function formatMinutes(minutes: number | null): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
-/** Comparación laxa de hora (espacios, HH:MM vs HH:MM:SS). */
 export function turnosEquivalentes(a: string, b: string): boolean {
   const x = (a ?? '').trim()
   const y = (b ?? '').trim()
@@ -419,14 +346,12 @@ export function diaSinTurnosLibres(
   return baseShifts.length > 0 && shiftsLibresParaFecha(baseShifts, fecha, ocupados).length === 0
 }
 
-/** Detecta a qué vista debe ir un servicio según su tipo */
 export function detectServicioView(svc: Servicio): 'alojamiento' | 'actividad' | 'restaurante' | 'transporte' | 'servicio' {
   const t = (svc.tipo?.nombre_tipo ?? '').toLowerCase()
   if (t.includes('alojamiento') || t.includes('hotel')) return 'alojamiento'
   if (t.includes('restaur') || t.includes('comida') || t.includes('gastro')) return 'restaurante'
   if (t.includes('transporte') || t.includes('vuelo') || t.includes('tren') || t.includes('bus') || t.includes('ferry')) return 'transporte'
   if (t.includes('actividad') || t.includes('aventura') || t.includes('tour') || t.includes('excursion')) return 'actividad'
-  // Fallback por subtipo de detalle presente
   if (svc.detalle_alojamiento) return 'alojamiento'
   if (svc.detalle_restauracion) return 'restaurante'
   if (svc.detalle_transporte) return 'transporte'
@@ -535,7 +460,6 @@ export function servicioToTransport(s: Servicio): TransportMock {
   }
 }
 
-// Cliente sin credenciales para endpoints públicos (evita CORS preflight complejo)
 const publicClient = axios.create({
   baseURL: (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api',
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -554,7 +478,6 @@ export const serviciosApi = {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return res.json() as Promise<Servicio>
   },
-  /** POST con JWT. Requiere sesión. */
   async postResena(idServicio: string, payload: { mensaje: string; puntuacion: number }): Promise<ResenaServicioAPI> {
     const encoded = encodeURIComponent(idServicio)
     const response = await api.post<ResenaServicioAPI>(`/servicios/${encoded}/resenas/`, payload)
@@ -574,7 +497,6 @@ export const misServiciosApi = {
   },
 }
 
-/** Lista de planes: admite array plano o paginación `{ results: [...] }`. */
 function normalizePlanListPayload(data: unknown): PlanViaje[] {
   if (Array.isArray(data)) return data as PlanViaje[]
   if (
@@ -587,7 +509,6 @@ function normalizePlanListPayload(data: unknown): PlanViaje[] {
   return []
 }
 
-/** Mensaje legible para errores de axios (útil en Mis reservas / planes). */
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError(error)) return fallback
   const data = error.response?.data
@@ -633,8 +554,12 @@ export const plansApi = {
     fecha_hora_fin: string | null
     nombre_servicio: string
     precio_estimado: number | null
+    monto_total: number | null
     estado_pago: string | null
     localizador_confirmacion: string | null
+    ubicacion_lat: number | null
+    ubicacion_lon: number | null
+    ubicacion_direccion: string | null
   }>): Promise<ItemPlan> {
     const response = await api.patch<ItemPlan>(`/auth/mis-planes/${planId}/items/${itemId}/`, payload)
     return response.data
@@ -653,8 +578,20 @@ export const plansApi = {
     precio_estimado?: number | null
     estado_pago?: string | null
     localizador_confirmacion?: string | null
+    ubicacion_lat?: number | null
+    ubicacion_lon?: number | null
+    ubicacion_direccion?: string | null
   }): Promise<ItemPlan> {
     const response = await api.post<ItemPlan>(`/auth/mis-planes/${planId}/items/`, payload)
+    return response.data
+  },
+}
+
+export const geocodeApi = {
+  async search(query: string): Promise<{ lat: number; lon: number; display_name: string }> {
+    const response = await api.get<{ lat: number; lon: number; display_name: string }>('/auth/geocode/', {
+      params: { q: query.trim() },
+    })
     return response.data
   },
 }
@@ -666,7 +603,6 @@ export interface Reserva {
   servicio_imagen: string | null
   servicio_ciudad: string | null
   servicio_tipo: string | null
-  /** FK `id_tipo` del servicio; necesario para ítems de plan correctos */
   servicio_tipo_id: number | null
   usuario_email: string | null
   usuario_nombre: string | null
@@ -711,7 +647,6 @@ export const reservasApi = {
     return response.data
   },
 
-  /** Vendedor: confirma o cancela una reserva de su servicio */
   async patchEstadoVendedor(
     idServicio: string,
     reservaId: number,

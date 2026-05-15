@@ -5,7 +5,6 @@
     :class="store.isDark ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300' : 'bg-gray-800 text-white hover:bg-gray-700'"
     :title="store.isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
   >
-    <!-- Sun icon -->
     <svg
       v-if="store.isDark"
       xmlns="http://www.w3.org/2000/svg"
@@ -29,7 +28,6 @@
       <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
     </svg>
     
-    <!-- Moon icon -->
     <svg
       v-else
       xmlns="http://www.w3.org/2000/svg"

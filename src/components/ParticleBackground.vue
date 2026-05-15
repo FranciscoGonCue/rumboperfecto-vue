@@ -59,7 +59,6 @@ function initScene() {
   console.log('🎨 Creando escena...')
   scene = new Scene()
   
-  // Luces
   const ambientLight = new AmbientLight(0xffffff, 0.3)
   scene.add(ambientLight)
   
@@ -213,7 +212,6 @@ function init() {
 
     console.log('✅ Three.js inicializado:', three)
 
-    // Establecer el color de fondo correcto según el tema
     three.renderer.setClearColor(props.isDark ? 0x000000 : 0xffffff, 1)
 
     initScene()
@@ -239,7 +237,6 @@ onMounted(() => {
   }, 100)
 })
 
-// Watch para cambiar el color de fondo cuando cambie el tema
 watch(() => props.isDark, (isDark) => {
   if (three && three.renderer) {
     three.renderer.setClearColor(isDark ? 0x000000 : 0xffffff, 1)
@@ -256,7 +253,6 @@ onUnmounted(() => {
     three.renderer.dispose()
   }
   if (composer) {
-    // EffectComposer no tiene dispose en esta versión
     composer.passes.forEach((pass: any) => {
       if (pass.dispose) pass.dispose()
     })

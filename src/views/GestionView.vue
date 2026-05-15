@@ -1,14 +1,13 @@
 <template>
   <div class="min-h-full pb-32 lg:pb-12" :class="store.isDark ? 'bg-rp-bg text-rp-text' : 'bg-gray-50 text-gray-900'">
 
-    <!-- RESERVAS DEL SERVICIO MODAL -->
+    
     <Transition name="slide-up">
       <div v-if="reservasModal.open" class="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeReservasModal" />
         <div class="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-t-3xl lg:rounded-3xl overflow-hidden shadow-2xl"
              :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white'">
 
-          <!-- Header -->
           <div class="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
                :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
             <div>
@@ -26,20 +25,16 @@
             </button>
           </div>
 
-          <!-- Content -->
           <div class="overflow-y-auto flex-1 p-6">
 
-            <!-- Loading -->
             <div v-if="reservasModal.loading" class="flex justify-center py-12">
               <Loader2 :size="32" class="animate-spin" style="color: var(--rp-accent)" />
             </div>
 
-            <!-- Error -->
             <p v-else-if="reservasModal.error" class="text-center text-red-500 font-bold py-10">
               {{ reservasModal.error }}
             </p>
 
-            <!-- Empty -->
             <div v-else-if="!reservasModal.list.length" class="text-center py-14">
               <CalendarCheck :size="40" class="mx-auto mb-3 opacity-20"
                              :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'" />
@@ -48,7 +43,6 @@
               </p>
             </div>
 
-            <!-- Lista -->
             <div v-else class="space-y-3">
               <div v-for="r in reservasModal.list" :key="r.id"
                    class="rounded-2xl p-4 border"
@@ -120,7 +114,6 @@
             </div>
           </div>
 
-          <!-- Footer resumen -->
           <div v-if="reservasModal.list.length"
                class="px-6 py-4 border-t flex items-center justify-between text-sm flex-shrink-0"
                :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
@@ -136,24 +129,19 @@
       </div>
     </Transition>
 
-    <!-- DETAIL EDIT MODAL -->
     <Transition name="slide-up">
       <div v-if="editingItem" class="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeEdit" />
-        <!-- Modal -->
         <div
           class="relative w-full lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-t-[32px] lg:rounded-[28px] z-10"
           :class="store.isDark
             ? 'bg-rp-surface border border-rp-border shadow-[0_-24px_80px_rgba(0,0,0,0.7)]'
             : 'bg-white border border-gray-100 shadow-[0_-24px_80px_rgba(0,0,0,0.15)]'"
         >
-          <!-- Drag handle (mobile) -->
           <div class="lg:hidden flex justify-center pt-4 pb-2">
             <div class="w-10 h-1 rounded-full" :class="store.isDark ? 'bg-rp-border' : 'bg-gray-200'" />
           </div>
 
-          <!-- Modal Header -->
           <div class="px-6 lg:px-8 pt-4 lg:pt-6 pb-5 flex items-center justify-between border-b"
                :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
             <div class="flex items-center space-x-3">
@@ -176,10 +164,8 @@
             </button>
           </div>
 
-          <!-- Form Fields -->
           <div class="px-6 lg:px-8 py-6 space-y-5">
 
-            <!-- Image preview + URL -->
             <div class="relative rounded-2xl overflow-hidden h-40 lg:h-52 border"
                  :class="store.isDark ? 'border-rp-border' : 'border-gray-100'">
               <img v-if="editForm.imagen" :src="editForm.imagen" class="w-full h-full object-cover" />
@@ -197,7 +183,6 @@
               </div>
             </div>
 
-            <!-- Nombre + Estado -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div class="lg:col-span-2">
                 <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Nombre del anuncio</label>
@@ -217,7 +202,6 @@
               </div>
             </div>
 
-            <!-- Descripción -->
             <div>
               <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Descripción</label>
               <textarea v-model="editForm.descripcion" rows="3"
@@ -225,7 +209,6 @@
                         :class="store.isDark ? 'dark-input' : 'light-input'" />
             </div>
 
-            <!-- Location row -->
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Ciudad</label>
@@ -241,7 +224,6 @@
               </div>
             </div>
 
-            <!-- Price row -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Precio</label>
@@ -263,8 +245,6 @@
               </div>
             </div>
 
-            <!-- Category-specific fields -->
-            <!-- ALOJAMIENTO extra -->
             <template v-if="editingItem.categoria === 'alojamiento'">
               <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
@@ -281,7 +261,6 @@
                 </div>
               </div>
 
-              <!-- Disponibilidad -->
               <div
                 class="rounded-2xl p-5 space-y-4 border"
                 :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'"
@@ -301,7 +280,6 @@
                   </div>
                 </div>
 
-                <!-- Rango de fechas -->
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Disponible desde</label>
@@ -313,14 +291,12 @@
                   </div>
                 </div>
 
-                <!-- Instrucción -->
                 <p class="text-xs font-medium" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                   Haz clic en un día <span class="text-emerald-500 font-bold">disponible</span> para marcarlo como
                   <span class="text-red-500 font-bold">no disponible</span>, y viceversa.
                   Los días fuera del rango no se pueden seleccionar.
                 </p>
 
-                <!-- Calendario -->
                 <div
                   v-if="editForm.fechaDesde && editForm.fechaHasta"
                   class="rounded-xl p-3 overflow-hidden avail-calendar-shell"
@@ -332,7 +308,6 @@
                   Introduce primero las fechas de inicio y fin para ver el calendario.
                 </p>
 
-                <!-- Resumen fechas no disponibles -->
                 <div v-if="(editForm.fechasNoDisponibles as string[]).length">
                   <p class="field-label mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
                     Días bloqueados ({{ (editForm.fechasNoDisponibles as string[]).length }})
@@ -352,7 +327,6 @@
               </div>
             </template>
 
-            <!-- RESTAURANTE extra -->
             <template v-if="editingItem.categoria === 'restaurante'">
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -365,7 +339,6 @@
                 </div>
               </div>
 
-              <!-- Disponibilidad restaurante -->
               <div class="rounded-2xl p-5 space-y-4 border"
                    :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'">
                 <div class="flex items-center justify-between">
@@ -533,15 +506,29 @@
                      class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
             </div>
 
-            <!-- Coordenadas -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Latitud</label>
-                <input v-model.number="editForm.latitud" type="number" step="0.000001" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
-              </div>
-              <div>
-                <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Longitud</label>
-                <input v-model.number="editForm.longitud" type="number" step="0.000001" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+            <!-- Ubicación en mapa (geocodificación al guardar en el servidor) -->
+            <div
+              class="rounded-2xl p-4 border space-y-3"
+              :class="store.isDark ? 'bg-rp-surface-2 border-rp-border' : 'bg-gray-50 border-gray-100'"
+            >
+              <p class="text-xs font-semibold leading-relaxed" :class="store.isDark ? 'text-rp-muted' : 'text-gray-600'">
+                <span class="font-black uppercase tracking-wide text-[10px]" style="color:var(--rp-accent)">Mapa</span><br />
+                Con dirección, ciudad y país el servidor calcula automáticamente latitud y longitud al guardar.
+              </p>
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-bold"
+                     :class="store.isDark ? 'text-rp-text' : 'text-gray-800'">
+                <input v-model="showCoordsManual" type="checkbox" class="rounded border-gray-400" />
+                Introducir coordenadas manualmente (opcional)
+              </label>
+              <div v-if="showCoordsManual" class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Latitud</label>
+                  <input v-model.number="editForm.latitud" type="number" step="0.000001" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                </div>
+                <div>
+                  <label class="field-label" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">Longitud</label>
+                  <input v-model.number="editForm.longitud" type="number" step="0.000001" class="field-input" :class="store.isDark ? 'dark-input' : 'light-input'" />
+                </div>
               </div>
             </div>
 
@@ -574,10 +561,9 @@
       </div>
     </Transition>
 
-    <!-- PAGE CONTENT -->
+
     <div class="max-w-6xl mx-auto px-5 lg:px-10 pt-8 lg:pt-10">
 
-      <!-- Page Header -->
       <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div class="flex items-center space-x-3 mb-2">
@@ -596,7 +582,6 @@
           </p>
         </div>
 
-        <!-- Add new button -->
         <button @click="openNewItemModal"
                 class="flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-wider text-white transition-all shadow-lg shadow-orange-900/30 hover:scale-[1.02] active:scale-[0.98]"
                 style="background: var(--rp-accent);">
@@ -605,7 +590,6 @@
         </button>
       </div>
 
-      <!-- Stats strip -->
       <div class="grid grid-cols-3 gap-3 mb-8">
         <div v-for="stat in statsBar" :key="stat.label"
              class="rounded-2xl p-4 flex items-center space-x-3 border transition-all"
@@ -624,7 +608,6 @@
         </div>
       </div>
 
-      <!-- Category Tabs -->
       <div class="flex items-center space-x-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
         <button
           v-for="tab in tabs"
@@ -647,7 +630,6 @@
         </button>
       </div>
 
-      <!-- Search + Sort bar -->
       <div class="flex items-center gap-3 mb-6">
         <div class="flex-1 flex items-center rounded-xl px-4 py-2.5 space-x-2 border transition-all"
              :class="store.isDark ? 'bg-rp-surface border-rp-border' : 'bg-white border-gray-100 shadow-sm'">
@@ -669,14 +651,12 @@
         </select>
       </div>
 
-      <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-20 space-x-3"
            :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'">
         <Loader2 :size="22" class="animate-spin" />
         <span class="text-sm font-semibold">Cargando tus servicios…</span>
       </div>
 
-      <!-- Fetch error -->
       <div v-else-if="fetchError" class="flex flex-col items-center justify-center py-20 text-center">
         <p class="text-sm font-bold text-red-400 mb-4">{{ fetchError }}</p>
         <button @click="fetchMisServicios"
@@ -686,7 +666,6 @@
         </button>
       </div>
 
-      <!-- Listings Grid -->
       <TransitionGroup v-else name="card-list" tag="div" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         <div
           v-for="item in filteredItems"
@@ -696,19 +675,16 @@
             ? 'bg-rp-surface border-rp-border hover:border-rp-accent/30 hover:shadow-[0_12px_32px_rgba(249,115,22,0.08)]'
             : 'bg-white border-gray-100 shadow-sm hover:shadow-lg hover:border-orange-100'"
         >
-          <!-- Card Image -->
           <div class="relative h-40 overflow-hidden">
             <img :src="item.imagen" :alt="item.nombre" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-            <!-- Category badge -->
             <div class="absolute top-3 left-3 flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-wider"
                  :style="`background: ${getCategoryColor(item.categoria)}; box-shadow: 0 4px 12px ${getCategoryGlow(item.categoria)}`">
               <span>{{ getCategoryIcon(item.categoria) }}</span>
               <span>{{ item.categoria }}</span>
             </div>
 
-            <!-- Status badge -->
             <div class="absolute top-3 right-3">
               <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
                     :class="item.estado === 'activo'
@@ -721,7 +697,6 @@
               </span>
             </div>
 
-            <!-- Price overlay -->
             <div class="absolute bottom-3 right-3 text-right">
               <p class="text-white font-black text-lg leading-none drop-shadow">
                 {{ item.moneda }} {{ item.precio }}
@@ -730,7 +705,6 @@
             </div>
           </div>
 
-          <!-- Card Body -->
           <div class="p-4">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0">
@@ -756,7 +730,6 @@
               {{ item.descripcion }}
             </p>
 
-            <!-- Tags -->
             <div class="flex flex-wrap gap-1.5 mb-4">
               <span v-for="tag in item.etiquetas.slice(0, 3)" :key="tag"
                     class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
@@ -770,7 +743,6 @@
               </span>
             </div>
 
-            <!-- Card Actions -->
             <div class="flex items-center space-x-2">
               <button @click="openEdit(item)"
                       class="flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -799,7 +771,6 @@
         </div>
       </TransitionGroup>
 
-      <!-- Empty State -->
       <div v-if="filteredItems.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
         <div class="text-6xl mb-4">{{ activeTab === 'todo' ? '📭' : getCategoryIcon(activeTab) }}</div>
         <h3 class="text-xl font-black uppercase mb-2" :class="store.isDark ? 'text-rp-muted' : 'text-gray-400'"
@@ -819,7 +790,6 @@
 
     </div>
 
-    <!-- Toast notification -->
     <Transition name="toast">
       <div v-if="toast.show"
            class="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[300] flex items-center space-x-3 px-5 py-3.5 rounded-2xl text-white text-sm font-bold shadow-2xl"
@@ -847,7 +817,6 @@ import interactionPlugin from '@fullcalendar/interaction'
 
 const store = useAppStore()
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface GestionItem {
   id: string
   categoria: 'alojamiento' | 'restaurante' | 'actividad'
@@ -864,8 +833,8 @@ interface GestionItem {
   reseñas: number
   estado: 'activo' | 'pausado' | 'borrador'
   etiquetas: string[]
-  latitud: number
-  longitud: number
+  latitud?: number
+  longitud?: number
   habitaciones?: number
   banos?: number
   capacidad?: number
@@ -874,14 +843,12 @@ interface GestionItem {
   duracion?: string
   dificultad?: string
   creadoEn: string
-  // Disponibilidad (alojamiento / actividad / restaurante)
   fechaDesde?: string
   fechaHasta?: string
   fechasNoDisponibles?: string[]
   turnosDisponibles?: string[]
 }
 
-// ── Mapping helpers ────────────────────────────────────────────────────────────
 function tipoToCategoria(nombreTipo: string | null | undefined): GestionItem['categoria'] {
   const t = (nombreTipo || '').toLowerCase()
   if (t.includes('restaur')) return 'restaurante'
@@ -916,8 +883,9 @@ function mapServicio(s: Servicio): GestionItem {
     reseñas: s.num_resenas ?? 0,
     estado,
     etiquetas: Array.isArray(s.etiquetas) ? s.etiquetas : [],
-    latitud: s.ubicacion_lat ?? 0,
-    longitud: s.ubicacion_lon ?? 0,
+    ...(s.ubicacion_lat != null && s.ubicacion_lon != null
+      ? { latitud: Number(s.ubicacion_lat), longitud: Number(s.ubicacion_lon) }
+      : {}),
     creadoEn: new Date().toISOString().slice(0, 10),
     tipoCocina: s.detalle_restauracion?.tipo_cocina ?? undefined,
     duracion: s.detalle_actividad?.duracion_estimada
@@ -949,7 +917,6 @@ function mapServicio(s: Servicio): GestionItem {
   }
 }
 
-// ── State ──────────────────────────────────────────────────────────────────────
 const items = ref<GestionItem[]>([])
 const loading = ref(false)
 const fetchError = ref<string | null>(null)
@@ -974,16 +941,15 @@ watch(
   (view) => { if (view === 'gestion') fetchMisServicios() },
 )
 
-// ── State ──────────────────────────────────────────────────────────────────────
 const activeTab = ref<string>('todo')
 const searchQuery = ref('')
 const sortBy = ref('reciente')
 const editingItem = ref<GestionItem | null>(null)
 const editForm = reactive<Record<string, any>>({})
+const showCoordsManual = ref(false)
 
 const toast = reactive({ show: false, message: '', type: 'success', icon: '✅' })
 
-// ── Tabs config ───────────────────────────────────────────────────────────────
 const tabs = [
   { key: 'todo', label: 'Todo', icon: '🗂️', color: '#f97316', glow: 'rgba(249,115,22,0.3)' },
   { key: 'alojamiento', label: 'Alojamientos', icon: '🏠', color: '#3b82f6', glow: 'rgba(59,130,246,0.3)' },
@@ -991,7 +957,6 @@ const tabs = [
   { key: 'actividad', label: 'Actividades', icon: '🧗', color: '#8b5cf6', glow: 'rgba(139,92,246,0.3)' },
 ]
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function getCategoryColor(cat: string) {
   const map: Record<string, string> = { alojamiento: '#3b82f6', restaurante: '#10b981', actividad: '#8b5cf6' }
   return map[cat] || '#f97316'
@@ -1009,14 +974,12 @@ function getCountByCategory(key: string) {
   return items.value.filter(i => i.categoria === key).length
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
 const statsBar = computed(() => [
   { label: 'Alojamientos', value: items.value.filter(i => i.categoria === 'alojamiento').length, icon: '🏠', color: '#3b82f6' },
   { label: 'Restaurantes', value: items.value.filter(i => i.categoria === 'restaurante').length, icon: '🍽️', color: '#10b981' },
   { label: 'Actividades', value: items.value.filter(i => i.categoria === 'actividad').length, icon: '🧗', color: '#8b5cf6' },
 ])
 
-// ── Filtered + Sorted ─────────────────────────────────────────────────────────
 const filteredItems = computed(() => {
   let result = [...items.value]
   if (activeTab.value !== 'todo') result = result.filter(i => i.categoria === activeTab.value)
@@ -1036,9 +999,9 @@ const filteredItems = computed(() => {
   return result
 })
 
-// ── Edit ──────────────────────────────────────────────────────────────────────
 function openEdit(item: GestionItem) {
   editingItem.value = item
+  showCoordsManual.value = false
   Object.assign(editForm, {
     ...item,
     etiquetas: item.etiquetas.join(', '),
@@ -1061,9 +1024,7 @@ async function saveEdit() {
   const etiquetas = String(editForm.etiquetas).split(',').map((t: string) => t.trim()).filter(Boolean)
   const cat = editingItem.value.categoria
 
-  // ── Payload para el backend ──────────────────────────────────────────
   const payload: Record<string, unknown> = {
-    // Campos de CatalogoServicio
     nombre:        editForm.nombre,
     descripcion:   editForm.descripcion,
     precio_base:   editForm.precio,
@@ -1076,21 +1037,28 @@ async function saveEdit() {
     valoracion:    editForm.valoracion,
     num_resenas:   editForm.reseñas,
     etiquetas,
-    ubicacion_lat: editForm.latitud,
-    ubicacion_lon: editForm.longitud,
   }
 
-  // Campos de disponibilidad (gestión de vendedor: alojamiento / actividad / restaurante)
+  const manualCoords =
+    showCoordsManual.value &&
+    typeof editForm.latitud === 'number' &&
+    typeof editForm.longitud === 'number' &&
+    !Number.isNaN(editForm.latitud) &&
+    !Number.isNaN(editForm.longitud)
+
+  if (manualCoords) {
+    payload.ubicacion_lat = editForm.latitud
+    payload.ubicacion_lon = editForm.longitud
+  }
+
   payload.fecha_disponible_desde  = editForm.fechaDesde  || null
   payload.fecha_disponible_hasta  = editForm.fechaHasta  || null
   payload.fechas_no_disponibles   = editForm.fechasNoDisponibles ?? []
 
-  // Turnos (actividad + restaurante)
   if (cat === 'actividad' || cat === 'restaurante') {
     payload.turnos_disponibles = editForm.turnosDisponibles ?? []
   }
 
-  // Campos específicos por categoría
   if (cat === 'alojamiento') {
     payload.amenidades = editForm.amenidades ?? []
   }
@@ -1103,7 +1071,6 @@ async function saveEdit() {
     payload.horario     = editForm.horario
   }
 
-  // ── Actualizar estado local optimistamente ───────────────────────────
   const idx = items.value.findIndex(i => i.id === editingItem.value!.id)
   if (idx !== -1) {
     items.value[idx] = {
@@ -1115,10 +1082,10 @@ async function saveEdit() {
   closeEdit()
   showToast('💾', 'Guardando cambios…', 'success')
 
-  // ── Llamada a la API ─────────────────────────────────────────────────
   try {
     await misServiciosApi.update(servicioId, payload)
     showToast('✅', 'Cambios guardados en el servidor', 'success')
+    await fetchMisServicios()
   } catch (err) {
     console.error('[RumboPerfecto] Error guardando servicio:', err)
     showToast('❌', 'Error al guardar en el servidor', 'error')
@@ -1157,14 +1124,13 @@ function openNewItemModal() {
     ciudad: '', pais: '', direccion: '',
     precio: 0, moneda: 'EUR', unidadPrecio: '/ noche',
     valoracion: 0, reseñas: 0, estado: 'borrador',
-    etiquetas: [], latitud: 0, longitud: 0,
+    etiquetas: [],
     creadoEn: new Date().toISOString().slice(0, 10),
   }
   items.value.unshift(blank)
   openEdit(blank)
 }
 
-// ── Reservas del servicio (modal vendedor) ────────────────────────────────────
 const reservasModal = ref<{ open: boolean; item: GestionItem | null; list: Reserva[]; loading: boolean; error: string | null }>({
   open: false, item: null, list: [], loading: false, error: null,
 })
@@ -1228,7 +1194,6 @@ function reservaEstadoClass(estado: Reserva['estado']) {
   return 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
 }
 
-// ── Availability calendar (alojamiento) ──────────────────────────────────────
 
 function gestionDateKey(date: Date) {
   const y = date.getFullYear()
@@ -1278,7 +1243,6 @@ const availCalendarOptions = computed(() => ({
   dayCellClassNames: availDayCellClassNames,
 }))
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(icon: string, message: string, type: string) {
   toast.show = true; toast.message = message; toast.type = type; toast.icon = icon
   setTimeout(() => { toast.show = false }, 3000)
@@ -1344,7 +1308,6 @@ function showToast(icon: string, message: string, type: string) {
   background: white;
 }
 
-/* Transitions */
 .slide-up-enter-active, .slide-up-leave-active { transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
 .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(40px); }
 
@@ -1356,7 +1319,6 @@ function showToast(icon: string, message: string, type: string) {
 .toast-enter-active, .toast-leave-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(20px); }
 
-/* ── Availability calendar ── */
 :deep(.avail-calendar-shell .fc) { font-family: 'DM Sans', sans-serif; }
 :deep(.avail-calendar-shell .fc-header-toolbar) { margin-bottom: 0.6rem; padding: 0.2rem 0.25rem 0.4rem; }
 :deep(.avail-calendar-shell .fc-toolbar-title) { font-size: 0.9rem; font-weight: 800; text-transform: capitalize; color: var(--rp-text, #374151); }
@@ -1380,18 +1342,15 @@ function showToast(icon: string, message: string, type: string) {
 }
 :deep(.avail-calendar-shell .fc-day-other .fc-daygrid-day-number) { opacity: 0.25; }
 
-/* Fuera del rango disponible */
 :deep(.avail-calendar-shell .rp-day-outside .fc-daygrid-day-number) {
   color: var(--rp-muted, #9ca3af); cursor: default; opacity: 0.35;
 }
-/* Disponible (verde) */
 :deep(.avail-calendar-shell .rp-day-free .fc-daygrid-day-number) {
   background: rgba(16,185,129,0.15); color: #059669; cursor: pointer; font-weight: 700;
 }
 :deep(.avail-calendar-shell .rp-day-free .fc-daygrid-day-number:hover) {
   background: rgba(239,68,68,0.15); color: #dc2626;
 }
-/* No disponible (rojo) */
 :deep(.avail-calendar-shell .rp-day-blocked .fc-daygrid-day-number) {
   background: rgba(239,68,68,0.2); color: #dc2626; cursor: pointer; font-weight: 700;
   text-decoration: line-through; opacity: 0.8;

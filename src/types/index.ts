@@ -76,7 +76,6 @@ export interface ItemPlan {
   nombre_servicio: string | null
   tipo: number | null
   tipo_nombre: string | null
-  /** Si viene de «Mis reservas», vincula al id de la reserva (solo un ítem por reserva). */
   reserva_id?: number | null
   fecha_hora_inicio: string | null
   fecha_hora_fin: string | null
@@ -87,6 +86,7 @@ export interface ItemPlan {
   fecha_transaccion: string | null
   ubicacion_lat: number | null
   ubicacion_lon: number | null
+  ubicacion_direccion?: string | null
 }
 
 export interface PlanViaje {
@@ -96,29 +96,6 @@ export interface PlanViaje {
   fecha_fin: string | null
   estado_plan: 'Borrador' | 'Confirmado' | 'Finalizado' | null
   items: ItemPlan[]
-}
-
-export interface BackendActivity {
-  id: number
-  day: number
-  title: string
-  location: string
-  time: string
-}
-
-export interface BackendTrip {
-  id: number
-  title: string
-  start_date: string
-  end_date: string
-  activities: BackendActivity[]
-}
-
-export interface PaymentIntent {
-  id: string
-  amount: number
-  currency: string
-  status: 'pending' | 'succeeded' | 'failed'
 }
 
 export interface MapLocation {

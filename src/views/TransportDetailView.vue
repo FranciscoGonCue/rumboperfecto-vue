@@ -1,7 +1,6 @@
 <template>
   <div class="p-5 lg:p-10 min-h-full">
     <div class="max-w-5xl mx-auto">
-      <!-- Back button -->
       <div class="mb-6">
         <button
           class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
@@ -22,19 +21,16 @@
           ? 'bg-rp-surface border border-rp-border shadow-[0_24px_48px_rgba(0,0,0,0.5)]'
           : 'bg-white border border-gray-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)]'"
       >
-        <!-- Hero banner (no image, stylized route card) -->
         <div
           class="relative h-52 lg:h-64 flex flex-col items-center justify-center overflow-hidden"
           :style="store.isDark
             ? 'background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);'
             : 'background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #eff6ff 100%);'"
         >
-          <!-- Animated route line -->
           <div class="absolute inset-0 flex items-center justify-center opacity-10">
             <div class="w-full h-0.5 bg-blue-400" />
           </div>
 
-          <!-- Transport type icon -->
           <div
             class="w-20 h-20 rounded-3xl flex items-center justify-center mb-4 shadow-2xl"
             :class="store.isDark ? 'bg-blue-600' : 'bg-blue-500'"
@@ -42,7 +38,6 @@
             <component :is="transportIcon" :size="42" class="text-white" />
           </div>
 
-          <!-- Route -->
           <div class="flex items-center gap-4 z-10">
             <div class="text-center">
               <p class="text-2xl font-black" :class="store.isDark ? 'text-white' : 'text-blue-900'" style="font-family: 'Syne', sans-serif;">
@@ -67,7 +62,6 @@
             </div>
           </div>
 
-          <!-- Type badge -->
           <div class="absolute top-4 left-4">
             <span
               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md"
@@ -80,7 +74,6 @@
             </span>
           </div>
 
-          <!-- Duration -->
           <div class="absolute top-4 right-4">
             <span
               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md"
@@ -95,7 +88,6 @@
         </div>
 
         <div class="p-6 lg:p-9 space-y-6">
-          <!-- Header -->
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2
@@ -136,12 +128,10 @@
 
           <ServiceReviewsPanel v-if="transport" :servicio-id="String(transport.id)" class="mt-2" />
 
-          <!-- Description -->
           <p class="leading-relaxed text-sm" :class="store.isDark ? 'text-rp-muted' : 'text-gray-700'">
             {{ transport.description }}
           </p>
 
-          <!-- Quick info grid -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div
               v-for="info in quickInfo"
@@ -157,7 +147,6 @@
             </div>
           </div>
 
-          <!-- Amenities -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Servicios incluidos
@@ -177,7 +166,6 @@
             </div>
           </div>
 
-          <!-- Tags -->
           <div>
             <h3 class="text-xs font-black uppercase tracking-widest mb-3" :class="store.isDark ? 'text-rp-muted' : 'text-gray-500'">
               Etiquetas
@@ -194,7 +182,6 @@
             </div>
           </div>
 
-          <!-- Booking -->
           <div
             class="rounded-2xl p-5 space-y-5 transition-colors"
             :class="store.isDark ? 'bg-rp-surface-2 border border-rp-border' : 'bg-gray-50 border border-gray-100'"
@@ -203,7 +190,6 @@
               Comprar billetes
             </h3>
 
-            <!-- Calendario de selección de fecha -->
             <div
               class="rounded-2xl p-3 overflow-hidden rp-calendar-shell"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -211,7 +197,6 @@
               <FullCalendar :key="calendarKey" :options="calendarOptions" />
             </div>
 
-            <!-- Fecha seleccionada + Hora -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 class="rounded-xl p-3 transition-colors"
@@ -242,7 +227,6 @@
               </div>
             </div>
 
-            <!-- Clase -->
             <div
               class="rounded-xl p-3 transition-colors"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -269,7 +253,6 @@
               </div>
             </div>
 
-            <!-- Pasajeros -->
             <div
               class="rounded-xl p-3 transition-colors"
               :class="store.isDark ? 'bg-rp-surface border border-rp-border' : 'bg-white border border-gray-100'"
@@ -295,7 +278,6 @@
               </div>
             </div>
 
-            <!-- Total -->
             <div
               v-if="departureDate && departureTime && selectedClass"
               class="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 transition-colors"
@@ -341,8 +323,7 @@
       </div>
     </div>
   </div>
-
-  <!-- Plan selector modal -->
+  
   <Teleport to="body">
     <Transition name="modal">
       <div
